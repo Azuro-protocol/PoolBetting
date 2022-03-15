@@ -76,30 +76,6 @@ contract TotoBetting is OwnableUpgradeable {
         _;
     }
 
-    modifier outcomeIsCorrect(uint256 conditionID_, uint256 outcomeWin_) {
-        require(
-            outcomeWin_ == conditions[conditionID_].outcomes[0] ||
-                outcomeWin_ == conditions[conditionID_].outcomes[1],
-            "Incorrect outcome"
-        );
-        _;
-    }
-
-    function conditionIsCanceled(uint256 conditionID_) returns (bool) {
-        if (conditions[conditionID_].state == conditionState.CANCELED) {
-            return true;
-        }
-        Condition storage condition = conditions[conditionID_];
-        if (
-            (block.timestamp + expireTimer >= condition.timestamp) &&
-            (condition.totalNetBets[0] == 0 || condition.totalNetBets[1] == 0)
-        ) {
-            condition.state = conditionState.CANCELED;
-            return true;
-        }
-        return false;
-    }
-
     modifier betAllowed(uint256 conditionID_) {
         require(
             !conditionIsCanceled(conditionID_) &&
@@ -112,14 +88,14 @@ contract TotoBetting is OwnableUpgradeable {
     function initialize(
         address token_,
         address oracle_,
-        uint256 fee_
+        uint128 fee_
     ) public virtual initializer {
         require(token_ != address(0), "Wrong token");
 
         __Ownable_init();
         oracles[oracle_] = true;
         DAOFee = fee_;
-        noBetTimeOver = 600;
+        expireTimer = 600;
         decimals = 10**9;
     }
 
@@ -151,7 +127,7 @@ contract TotoBetting is OwnableUpgradeable {
         );
 
         lastConditionID++;
-        oracleConditionIDs[msg.sender][oracleCondID] = lastConditionID;
+        oracleConditionIDs[msg.sender][oracleCondID_] = lastConditionID;
 
         Condition storage newCondition = conditions[lastConditionID];
         newCondition.outcomes = outcomes_;
@@ -160,17 +136,20 @@ contract TotoBetting is OwnableUpgradeable {
         newCondition.ipfsHash = ipfsHash_;
         newCondition.state = conditionState.CREATED;
 
-        emit ConditionCreated(oracleCondID, lastConditionID, timestamp);
+        emit ConditionCreated(oracleCondID_, lastConditionID, timestamp_);
     }
 
     function resolveCondition(uint256 oracleCondID_, uint64 outcomeWin_)
         external
         onlyOracle
-        outcomeIsCorrect(conditionID_, outcomeWin_)
     {
         uint256 conditionID = oracleConditionIDs[msg.sender][oracleCondID_];
 
         require(!conditionIsCanceled(conditionID), "Condition is canceled");
+        require(
+            outcomeIsCorrect(conditionID, outcomeWin_),
+            "Incorrect outcome"
+        );
 
         Condition storage condition = conditions[conditionID];
 
@@ -183,8 +162,7 @@ contract TotoBetting is OwnableUpgradeable {
             condition.state == conditionState.CREATED,
             "Condition already set"
         );
-
-        uint128[2] fees = [
+        uint128[2] memory fees = [
             (condition.totalNetBets[0] * DAOFee) / decimals,
             (condition.totalNetBets[1] * DAOFee) / decimals
         ];
@@ -197,17 +175,43 @@ contract TotoBetting is OwnableUpgradeable {
         emit ConditionResolved(oracleCondID_, conditionID, outcomeWin_);
     }
 
-    function bet(
+    function conditionIsCanceled(uint256 conditionID_) internal returns (bool) {
+        if (conditions[conditionID_].state == conditionState.CANCELED) {
+            return true;
+        }
+        Condition storage condition = conditions[conditionID_];
+        if (
+            (block.timestamp + expireTimer >= condition.timestamp) &&
+            (condition.totalNetBets[0] == 0 || condition.totalNetBets[1] == 0)
+        ) {
+            condition.state = conditionState.CANCELED;
+            return true;
+        }
+        return false;
+    }
+
+    function outcomeIsCorrect(uint256 conditionID_, uint256 outcomeWin_)
+        internal
+        view
+        returns (bool)
+    {
+        if (
+            outcomeWin_ == conditions[conditionID_].outcomes[0] ||
+            outcomeWin_ == conditions[conditionID_].outcomes[1]
+        ) return true;
+        return false;
+    }
+
+    function makeBet(
         uint256 conditionID_,
         uint128 amount_,
         uint64 outcomeWin_
-    )
-        external
-        outcomeIsCorrect(conditionID_, outcomeWin_)
-        betAllowed(conditionID_)
-        returns (uint256)
-    {
-        require(amount_ > 0, Errors.AMOUNT_MUST_BE_NON_ZERO);
+    ) external betAllowed(conditionID_) returns (uint256) {
+        require(amount_ > 0, "Amount must not be zero");
+        require(
+            outcomeIsCorrect(conditionID_, outcomeWin_),
+            "Incorrect outcome"
+        );
 
         Condition storage condition = conditions[conditionID_];
 
@@ -218,12 +222,12 @@ contract TotoBetting is OwnableUpgradeable {
             conditionID: conditionID_,
             amount: amount_,
             outcome: outcomeWin_,
-            createdAt: block.timestamp,
+            createdAt: uint64(block.timestamp),
             bettor: msg.sender,
             payed: false
         });
 
-        condition.totalNetBets[outcomeIndex] += amount;
+        condition.totalNetBets[outcomeIndex] += amount_;
 
         TransferHelper.safeTransferFrom(
             token,
@@ -250,7 +254,7 @@ contract TotoBetting is OwnableUpgradeable {
             "Condition is still on"
         );
         uint128 payout;
-        if (conditionState.RESOLVED == true) {
+        if (condition.state == conditionState.RESOLVED) {
             if (bet.outcome != condition.outcomeWin) {
                 payout = 0;
             } else {
@@ -274,7 +278,7 @@ contract TotoBetting is OwnableUpgradeable {
             payout
         );
 
-        emit BetterWin(msg.sender, amount);
+        emit BetterWin(msg.sender, payout);
     }
 
     function claimDAOReward() external {
@@ -282,6 +286,6 @@ contract TotoBetting is OwnableUpgradeable {
 
         uint128 reward = DAOReward;
         DAOReward = 0;
-        TransferHelper.safeTransferFrom(token, owner(), reward);
+        TransferHelper.safeTransfer(token, owner(), reward);
     }
 }
