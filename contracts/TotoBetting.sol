@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.3;
 
+import "./interface/IBetToken.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
@@ -10,15 +11,6 @@ contract TotoBetting is OwnableUpgradeable {
         CREATED,
         RESOLVED,
         CANCELED
-    }
-
-    struct Bet {
-        uint256 conditionID;
-        uint128 amount;
-        uint64 outcome;
-        uint64 createdAt;
-        address bettor;
-        bool payed;
     }
 
     struct Condition {
@@ -32,6 +24,8 @@ contract TotoBetting is OwnableUpgradeable {
     }
 
     address public token;
+    IBetToken betToken;
+
     uint128 public DAOFee;
     uint128 public DAOReward;
 
@@ -45,8 +39,7 @@ contract TotoBetting is OwnableUpgradeable {
     mapping(uint256 => Condition) public conditions;
     uint256 public lastConditionID;
 
-    mapping(uint256 => Bet) public bets; // tokenID -> BET
-    uint256 public lastBetID;
+    event BetTokenChanged(address indexed newBetToken);
 
     event OracleAdded(address indexed newOracle);
     event OracleRenounced(address indexed oracle);
@@ -64,15 +57,23 @@ contract TotoBetting is OwnableUpgradeable {
 
     event NewBet(
         address indexed owner,
-        uint256 indexed betID,
         uint256 indexed conditionID,
-        uint64 outcomeId,
+        uint256 indexed conditionOutcomeId,
+        uint64 outcomeID,
         uint128 amount
     );
-    event BetterWin(address indexed better, uint128 amount);
+    event BetterWin(address indexed better, uint256 amount);
 
     modifier onlyOracle() {
         require(oracles[msg.sender], "Permission denied: Oracle only");
+        _;
+    }
+
+    modifier outcomeIsCorrect(uint256 conditionID_, uint256 outcomeWin_) {
+        require(
+            isOutcomeCorrect(conditionID_, outcomeWin_),
+            "Incorrect outcome"
+        );
         _;
     }
 
@@ -87,19 +88,26 @@ contract TotoBetting is OwnableUpgradeable {
 
     function initialize(
         address token_,
+        address betToken_,
         address oracle_,
         uint128 fee_
     ) public virtual initializer {
         require(token_ != address(0), "Wrong token");
 
         __Ownable_init();
+        betToken = IBetToken(betToken_);
         oracles[oracle_] = true;
         DAOFee = fee_;
         expireTimer = 600;
         decimals = 10**9;
     }
 
-    function setOracle(address oracle_) external onlyOwner {
+    function changeBetToken(address betToken_) external onlyOwner {
+        betToken = IBetToken(betToken_);
+        emit BetTokenChanged(betToken_);
+    }
+
+    function addOracle(address oracle_) external onlyOwner {
         oracles[oracle_] = true;
         emit OracleAdded(oracle_);
     }
@@ -147,7 +155,7 @@ contract TotoBetting is OwnableUpgradeable {
 
         require(!conditionIsCanceled(conditionID), "Condition is canceled");
         require(
-            outcomeIsCorrect(conditionID, outcomeWin_),
+            isOutcomeCorrect(conditionID, outcomeWin_),
             "Incorrect outcome"
         );
 
@@ -190,7 +198,7 @@ contract TotoBetting is OwnableUpgradeable {
         return false;
     }
 
-    function outcomeIsCorrect(uint256 conditionID_, uint256 outcomeWin_)
+    function isOutcomeCorrect(uint256 conditionID_, uint256 outcomeWin_)
         internal
         view
         returns (bool)
@@ -204,28 +212,18 @@ contract TotoBetting is OwnableUpgradeable {
 
     function makeBet(
         uint256 conditionID_,
-        uint128 amount_,
-        uint64 outcomeWin_
-    ) external betAllowed(conditionID_) returns (uint256) {
+        uint64 outcomeWin_,
+        uint128 amount_
+    )
+        external
+        betAllowed(conditionID_)
+        outcomeIsCorrect(conditionID_, outcomeWin_)
+    {
         require(amount_ > 0, "Amount must not be zero");
-        require(
-            outcomeIsCorrect(conditionID_, outcomeWin_),
-            "Incorrect outcome"
-        );
 
         Condition storage condition = conditions[conditionID_];
 
         uint8 outcomeIndex = (outcomeWin_ == condition.outcomes[0] ? 0 : 1);
-
-        lastBetID++;
-        bets[lastBetID] = Bet({
-            conditionID: conditionID_,
-            amount: amount_,
-            outcome: outcomeWin_,
-            createdAt: uint64(block.timestamp),
-            bettor: msg.sender,
-            payed: false
-        });
 
         condition.totalNetBets[outcomeIndex] += amount_;
 
@@ -236,41 +234,58 @@ contract TotoBetting is OwnableUpgradeable {
             amount_
         );
 
-        emit NewBet(msg.sender, lastBetID, conditionID_, outcomeWin_, amount_);
+        uint256 conditionOutcomeID = betToken.mint(
+            msg.sender,
+            lastConditionID,
+            outcomeIndex,
+            amount_
+        );
 
-        return lastBetID;
+        emit NewBet(
+            msg.sender,
+            conditionID_,
+            conditionOutcomeID,
+            outcomeWin_,
+            amount_
+        );
     }
 
-    function withdrawPayout(uint256 betID_) external {
-        Bet storage bet = bets[betID_];
-        require(bet.amount > 0, "Bet does not exist");
-        require(bet.bettor == msg.sender, "Only bet owner");
-        require(bet.payed == false, "Bet is already payed");
+    function withdrawPayout(uint256 conditionID_, uint64 outcomeWin_)
+        external
+        outcomeIsCorrect(conditionID_, outcomeWin_)
+    {
+        Condition memory condition = conditions[conditionID_];
+        uint8 outcomeWinIndex = (outcomeWin_ == condition.outcomes[0] ? 0 : 1);
+        uint256 conditionOutcomeID = betToken.getConditionOutcomeID(
+            address(this),
+            conditionID_,
+            outcomeWinIndex
+        );
+        uint256 balance = betToken.balanceOfToken(
+            msg.sender,
+            conditionOutcomeID
+        );
 
-        Condition memory condition = conditions[bet.conditionID];
         require(
             condition.state == conditionState.RESOLVED == true ||
-                conditionIsCanceled(bet.conditionID),
+                conditionIsCanceled(conditionID_),
             "Condition is still on"
         );
-        uint128 payout;
+        uint256 payout;
         if (condition.state == conditionState.RESOLVED) {
-            if (bet.outcome != condition.outcomeWin) {
+            if (conditionOutcomeID % 2 == outcomeWinIndex) {
                 payout = 0;
             } else {
-                uint8 outcomeWinIndex = (
-                    condition.outcomeWin == condition.outcomes[0] ? 0 : 1
-                );
                 payout =
-                    condition.totalNetBets[0] +
-                    (condition.totalNetBets[1] * bet.amount) /
+                    ((condition.totalNetBets[0] + condition.totalNetBets[1]) *
+                        balance) /
                     condition.totalNetBets[outcomeWinIndex];
             }
         } else {
-            payout = bet.amount;
+            payout = balance;
         }
 
-        bet.payed = true;
+        betToken.burn(msg.sender, conditionOutcomeID, outcomeWinIndex, balance);
         TransferHelper.safeTransferFrom(
             token,
             address(this),
