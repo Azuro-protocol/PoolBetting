@@ -17,14 +17,14 @@ interface ITotoBet {
         returns (uint256);
 
     function mint(
-        address account_,
+        address to_,
         uint256 coreConditionID_,
         uint8 outcomeIndex_,
         uint128 amount_
     ) external returns (uint256);
 
     function burn(
-        address account_,
+        address from_,
         uint256 coreConditionID_,
         uint8 outcomeIndex_,
         uint256 amount_
