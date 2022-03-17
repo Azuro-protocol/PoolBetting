@@ -2,16 +2,16 @@
 
 pragma solidity 0.8.3;
 
-interface IBetToken {
+interface ITotoBet {
     function updateCore(address core_, bool active_) external;
 
-    function getConditionOutcomeID(
+    function getTokenID(
         address core_,
         uint256 coreConditionID_,
         uint8 outcomeIndex_
     ) external view returns (uint256);
 
-    function balanceOfToken(address account, uint256 conditionOutcomeID_)
+    function balanceOf(address account, uint256 conditionOutcomeID_)
         external
         view
         returns (uint256);

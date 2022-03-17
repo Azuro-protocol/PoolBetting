@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.3;
 
-import "./interface/IBetToken.sol";
+import "./interface/ITotoBet.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
@@ -24,7 +24,7 @@ contract TotoBetting is OwnableUpgradeable {
     }
 
     address public token;
-    IBetToken betToken;
+    ITotoBet betToken;
 
     uint128 public DAOFee;
     uint128 public DAOReward;
@@ -39,7 +39,7 @@ contract TotoBetting is OwnableUpgradeable {
     mapping(uint256 => Condition) public conditions;
     uint256 public lastConditionID;
 
-    event BetTokenChanged(address indexed newBetToken);
+    event TotoBetChanged(address indexed newTotoBet);
 
     event OracleAdded(address indexed newOracle);
     event OracleRenounced(address indexed oracle);
@@ -58,11 +58,15 @@ contract TotoBetting is OwnableUpgradeable {
     event NewBet(
         address indexed owner,
         uint256 indexed conditionID,
-        uint256 indexed conditionOutcomeId,
+        uint256 indexed tokenId,
         uint64 outcomeID,
         uint128 amount
     );
-    event BetterWin(address indexed better, uint256 amount);
+    event BetterWin(
+        address indexed better,
+        uint256 indexed tokenId,
+        uint256 amount
+    );
 
     modifier onlyOracle() {
         require(oracles[msg.sender], "Permission denied: Oracle only");
@@ -88,23 +92,23 @@ contract TotoBetting is OwnableUpgradeable {
 
     function initialize(
         address token_,
-        address betToken_,
+        address totoBet_,
         address oracle_,
         uint128 fee_
     ) public virtual initializer {
         require(token_ != address(0), "Wrong token");
 
         __Ownable_init();
-        betToken = IBetToken(betToken_);
+        betToken = ITotoBet(totoBet_);
         oracles[oracle_] = true;
         DAOFee = fee_;
         expireTimer = 600;
         decimals = 10**9;
     }
 
-    function changeBetToken(address betToken_) external onlyOwner {
-        betToken = IBetToken(betToken_);
-        emit BetTokenChanged(betToken_);
+    function changeTotoBet(address totoBet_) external onlyOwner {
+        betToken = ITotoBet(totoBet_);
+        emit TotoBetChanged(totoBet_);
     }
 
     function addOracle(address oracle_) external onlyOwner {
@@ -118,7 +122,7 @@ contract TotoBetting is OwnableUpgradeable {
     }
 
     function createCondition(
-        uint256 oracleCondID_,
+        uint256 oracleConditionID_,
         uint64[2] memory outcomes_,
         uint128 scopeID_,
         uint64 timestamp_,
@@ -130,12 +134,12 @@ contract TotoBetting is OwnableUpgradeable {
             "Condition is expired"
         );
         require(
-            oracleConditionIDs[msg.sender][oracleCondID_] == 0,
+            oracleConditionIDs[msg.sender][oracleConditionID_] == 0,
             "Condition already exists"
         );
 
         lastConditionID++;
-        oracleConditionIDs[msg.sender][oracleCondID_] = lastConditionID;
+        oracleConditionIDs[msg.sender][oracleConditionID_] = lastConditionID;
 
         Condition storage newCondition = conditions[lastConditionID];
         newCondition.outcomes = outcomes_;
@@ -144,14 +148,16 @@ contract TotoBetting is OwnableUpgradeable {
         newCondition.ipfsHash = ipfsHash_;
         newCondition.state = conditionState.CREATED;
 
-        emit ConditionCreated(oracleCondID_, lastConditionID, timestamp_);
+        emit ConditionCreated(oracleConditionID_, lastConditionID, timestamp_);
     }
 
-    function resolveCondition(uint256 oracleCondID_, uint64 outcomeWin_)
+    function resolveCondition(uint256 oracleConditionID_, uint64 outcomeWin_)
         external
         onlyOracle
     {
-        uint256 conditionID = oracleConditionIDs[msg.sender][oracleCondID_];
+        uint256 conditionID = oracleConditionIDs[msg.sender][
+            oracleConditionID_
+        ];
 
         require(!conditionIsCanceled(conditionID), "Condition is canceled");
         require(
@@ -180,7 +186,7 @@ contract TotoBetting is OwnableUpgradeable {
 
         condition.state = conditionState.RESOLVED;
 
-        emit ConditionResolved(oracleCondID_, conditionID, outcomeWin_);
+        emit ConditionResolved(oracleConditionID_, conditionID, outcomeWin_);
     }
 
     function conditionIsCanceled(uint256 conditionID_) internal returns (bool) {
@@ -234,20 +240,14 @@ contract TotoBetting is OwnableUpgradeable {
             amount_
         );
 
-        uint256 conditionOutcomeID = betToken.mint(
+        uint256 tokenID = betToken.mint(
             msg.sender,
             lastConditionID,
             outcomeIndex,
             amount_
         );
 
-        emit NewBet(
-            msg.sender,
-            conditionID_,
-            conditionOutcomeID,
-            outcomeWin_,
-            amount_
-        );
+        emit NewBet(msg.sender, conditionID_, tokenID, outcomeWin_, amount_);
     }
 
     function withdrawPayout(uint256 conditionID_, uint64 outcomeWin_)
@@ -255,25 +255,29 @@ contract TotoBetting is OwnableUpgradeable {
         outcomeIsCorrect(conditionID_, outcomeWin_)
     {
         Condition memory condition = conditions[conditionID_];
-        uint8 outcomeWinIndex = (outcomeWin_ == condition.outcomes[0] ? 0 : 1);
-        uint256 conditionOutcomeID = betToken.getConditionOutcomeID(
-            address(this),
-            conditionID_,
-            outcomeWinIndex
-        );
-        uint256 balance = betToken.balanceOfToken(
-            msg.sender,
-            conditionOutcomeID
-        );
 
         require(
             condition.state == conditionState.RESOLVED == true ||
                 conditionIsCanceled(conditionID_),
             "Condition is still on"
         );
+
+        uint8 outcomeWinIndex = (outcomeWin_ == condition.outcomes[0] ? 0 : 1);
+        uint256 tokenID = betToken.getTokenID(
+            address(this),
+            conditionID_,
+            outcomeWinIndex
+        );
+        uint256 balance = betToken.balanceOf(msg.sender, tokenID);
+
+        require(
+            balance > 0,
+            "You have no bet tokens for such condition outcome"
+        );
+
         uint256 payout;
         if (condition.state == conditionState.RESOLVED) {
-            if (conditionOutcomeID % 2 == outcomeWinIndex) {
+            if (tokenID % 2 == outcomeWinIndex) {
                 payout = 0;
             } else {
                 payout =
@@ -285,7 +289,7 @@ contract TotoBetting is OwnableUpgradeable {
             payout = balance;
         }
 
-        betToken.burn(msg.sender, conditionOutcomeID, outcomeWinIndex, balance);
+        betToken.burn(msg.sender, tokenID, outcomeWinIndex, balance);
         TransferHelper.safeTransferFrom(
             token,
             address(this),
@@ -293,7 +297,7 @@ contract TotoBetting is OwnableUpgradeable {
             payout
         );
 
-        emit BetterWin(msg.sender, payout);
+        emit BetterWin(msg.sender, tokenID, payout);
     }
 
     function claimDAOReward() external {
