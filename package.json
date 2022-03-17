@@ -8,6 +8,8 @@
     "@uniswap/lib": "^4.0.1-alpha",
     "ethereum-waffle": "^3.4.0",
     "ethers": "^5.6.0",
-    "hardhat": "^2.9.1"
+    "hardhat": "^2.9.1",
+    "prettier": "^2.6.0",
+    "prettier-plugin-solidity": "^1.0.0-beta.19"
   }
 }
