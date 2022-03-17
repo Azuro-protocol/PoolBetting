@@ -69,7 +69,7 @@ contract TotoBetting is OwnableUpgradeable {
     );
 
     modifier onlyOracle() {
-        require(oracles[msg.sender], "Permission denied: Oracle only");
+        require(oracles[msg.sender], "Oracle only");
         _;
     }
 
@@ -189,6 +189,30 @@ contract TotoBetting is OwnableUpgradeable {
         emit ConditionResolved(oracleConditionID_, conditionID, outcomeWin_);
     }
 
+    function isOutcomeCorrect(uint256 conditionID_, uint256 outcomeWin_)
+        internal
+        view
+        returns (bool)
+    {
+        if (
+            outcomeWin_ == conditions[conditionID_].outcomes[0] ||
+            outcomeWin_ == conditions[conditionID_].outcomes[1]
+        ) return true;
+        return false;
+    }
+
+    function cancelCondition(uint256 conditionID_) internal onlyOracle {
+        Condition storage condition = conditions[conditionID_];
+
+        require(condition.timestamp > 0, "Condition does not exist");
+        require(
+            condition.state != conditionState.CANCELED,
+            "Condition is already canceled"
+        );
+
+        condition.state = conditionState.CANCELED;
+    }
+
     function conditionIsCanceled(uint256 conditionID_) internal returns (bool) {
         if (conditions[conditionID_].state == conditionState.CANCELED) {
             return true;
@@ -201,18 +225,6 @@ contract TotoBetting is OwnableUpgradeable {
             condition.state = conditionState.CANCELED;
             return true;
         }
-        return false;
-    }
-
-    function isOutcomeCorrect(uint256 conditionID_, uint256 outcomeWin_)
-        internal
-        view
-        returns (bool)
-    {
-        if (
-            outcomeWin_ == conditions[conditionID_].outcomes[0] ||
-            outcomeWin_ == conditions[conditionID_].outcomes[1]
-        ) return true;
         return false;
     }
 
