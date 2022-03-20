@@ -53,23 +53,11 @@ contract TotoBet is OwnableUpgradeable, ERC1155Upgradeable, ITotoBet {
         address core_,
         uint256 coreConditionID_,
         uint8 outcomeIndex_
-    ) public view override returns (uint256) {
+    ) public view returns (uint256) {
         uint256 tokenID = _tokenIDs[core_][coreConditionID_];
         require(tokenID != 0, "BetToken: Token does not exist");
 
         return tokenID + outcomeIndex_;
-    }
-
-    /**
-     * @dev See {IERC1155-balanceOf}
-     */
-    function balanceOf(address account, uint256 conditionOutcomeID_)
-        public
-        view
-        override(ERC1155Upgradeable, ITotoBet)
-        returns (uint256)
-    {
-        return balanceOf(account, conditionOutcomeID_);
     }
 
     /**
@@ -103,25 +91,60 @@ contract TotoBet is OwnableUpgradeable, ERC1155Upgradeable, ITotoBet {
     }
 
     /**
-     * @dev destroys `amount_` bet tokens from `from`.
-     *
-     * See also {ERC1155Upgradeable-_burn}
-     *
-     * @param from_ account address bet token burn from
+     * @dev destroys all bet tokens related to specific condition's outcome
+     * @param from_ account address bet tokens burn from
      * @param coreConditionID_ the match or game id in TotoBetting's internal system
      * @param outcomeIndex_ index of condition's outcome in TotoBetting's internal system
-     * @param amount_ amount of bet token burn to
+     * @return unique for every core, condition and its outcomes bet token id
+     * @return amount of burned tokens
      */
-    function burn(
+    function burnAll(
         address from_,
         uint256 coreConditionID_,
-        uint8 outcomeIndex_,
-        uint256 amount_
-    ) external override onlyCore {
-        super._burn(
-            from_,
-            getTokenID(msg.sender, coreConditionID_, outcomeIndex_),
-            amount_
+        uint8 outcomeIndex_
+    ) external override onlyCore returns (uint256, uint256) {
+        uint256 tokenID = getTokenID(
+            msg.sender,
+            coreConditionID_,
+            outcomeIndex_
         );
+        uint256 balance = super.balanceOf(from_, tokenID);
+
+        super._burn(from_, tokenID, balance);
+
+        return (tokenID, balance);
+    }
+
+    /**
+     * @dev destroys all bet tokens related to set of specific conditions outcomes
+     * @param from_ account address bet tokens burn from
+     * @param coreConditionsIDs_ matches or games ids in TotoBetting's internal system
+     * @param outcomesIndices_ indices of conditions outcomes in TotoBetting's internal system
+     * @return array of unique for every core, condition and its outcomes bet tokens ids for each specified conditions outcomes
+     * @return array of burned tokens for each specified conditions outcomes
+     */
+    function burnAll(
+        address from_,
+        uint256[] memory coreConditionsIDs_,
+        uint8[] memory outcomesIndices_
+    ) external override onlyCore returns (uint256[] memory, uint256[] memory) {
+        uint256[] memory tokenIDs = new uint256[](coreConditionsIDs_.length);
+        uint256[] memory balances = new uint256[](coreConditionsIDs_.length);
+        uint256 tokenID;
+        uint256 balance;
+        for (uint256 i = 0; i < coreConditionsIDs_.length; i++) {
+            tokenID = getTokenID(
+                msg.sender,
+                coreConditionsIDs_[i],
+                outcomesIndices_[i]
+            );
+            balance = super.balanceOf(from_, tokenID);
+            tokenIDs[i] = tokenID;
+            balances[i] = balance;
+
+            super._burn(from_, tokenID, balance);
+        }
+
+        return (tokenIDs, balances);
     }
 }

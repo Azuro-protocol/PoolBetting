@@ -59,14 +59,20 @@ contract TotoBetting is OwnableUpgradeable {
 
     event NewBet(
         address indexed owner,
-        uint256 indexed conditionID,
         uint256 indexed tokenId,
+        uint256 indexed conditionID,
         uint64 outcomeID,
         uint128 amount
     );
+
     event BetterWin(
         address indexed better,
-        uint256 indexed tokenId,
+        uint256 indexed tokenID,
+        uint256 amount
+    );
+    event BetterWin(
+        address indexed better,
+        uint256[] indexed tokenIDs,
         uint256 amount
     );
 
@@ -325,7 +331,7 @@ contract TotoBetting is OwnableUpgradeable {
             amount_
         );
 
-        emit NewBet(msg.sender, conditionID_, tokenID, outcomeWin_, amount_);
+        emit NewBet(msg.sender, tokenID, conditionID_, outcomeWin_, amount_);
     }
 
     /**
@@ -346,17 +352,13 @@ contract TotoBetting is OwnableUpgradeable {
         );
 
         uint8 outcomeWinIndex = (outcomeWin_ == condition.outcomes[0] ? 0 : 1);
-        uint256 tokenID = betToken.getTokenID(
-            address(this),
+        (uint256 tokenID, uint256 balance) = betToken.burnAll(
+            msg.sender,
             conditionID_,
             outcomeWinIndex
         );
-        uint256 balance = betToken.balanceOf(msg.sender, tokenID);
 
-        require(
-            balance > 0,
-            "You have no bet tokens for such condition outcome"
-        );
+        require(balance > 0, "You have no reward for this condition's outcome");
 
         uint256 payout;
         if (condition.state == conditionState.RESOLVED) {
@@ -372,7 +374,6 @@ contract TotoBetting is OwnableUpgradeable {
             payout = balance;
         }
 
-        betToken.burn(msg.sender, tokenID, outcomeWinIndex, balance);
         TransferHelper.safeTransferFrom(
             token,
             address(this),
@@ -381,6 +382,85 @@ contract TotoBetting is OwnableUpgradeable {
         );
 
         emit BetterWin(msg.sender, tokenID, payout);
+    }
+
+    /**
+     * @dev withdraw bettor prizes
+     * @param conditionsIDs_ matches or games ids in format
+     *                      [Condition 1 ID, Condition 2 ID, ...]
+     * @param outcomesWin_ outcomes ids on which bets were placed in format
+     *                     [Condition 1 outcomeID, Condition 2 outcomeID, ...]
+     */
+    function withdrawPayout(
+        uint256[] memory conditionsIDs_,
+        uint64[] memory outcomesWin_
+    ) external {
+        require(
+            conditionsIDs_.length == outcomesWin_.length,
+            "Number of conditions and outcomes should be equal"
+        );
+
+        Condition[] memory conditions_ = new Condition[](conditionsIDs_.length);
+        Condition memory condition;
+        uint8[] memory outcomesWinIndices = new uint8[](conditionsIDs_.length);
+        uint256 conditionID;
+
+        for (uint256 i = 0; i < conditionsIDs_.length; i++) {
+            conditionID = conditionsIDs_[i];
+            condition = conditions[conditionID];
+
+            require(
+                condition.state == conditionState.RESOLVED == true ||
+                    conditionIsCanceled(conditionID),
+                "Condition is still on"
+            );
+
+            conditions_[i] = condition;
+            outcomesWinIndices[i] = (
+                outcomesWin_[0] == condition.outcomes[0] ? 0 : 1
+            );
+        }
+
+        uint256[] memory tokenIDs = new uint256[](conditionsIDs_.length);
+        uint256[] memory balances = new uint256[](conditionsIDs_.length);
+        (tokenIDs, balances) = betToken.burnAll(
+            msg.sender,
+            conditionsIDs_,
+            outcomesWinIndices
+        );
+
+        uint256 totalPayout;
+        uint256 balance;
+        uint8 outcomeWinIndex;
+        for (uint256 i = 0; i < conditionsIDs_.length; i++) {
+            condition = conditions_[i];
+            outcomeWinIndex = outcomesWinIndices[i];
+            balance = balances[i];
+            if (condition.state == conditionState.RESOLVED) {
+                if (tokenIDs[i] % 2 != outcomeWinIndex) {
+                    totalPayout +=
+                        ((condition.totalNetBets[0] +
+                            condition.totalNetBets[1]) * balance) /
+                        condition.totalNetBets[outcomeWinIndex];
+                }
+            } else {
+                totalPayout += balance;
+            }
+        }
+
+        require(
+            totalPayout > 0,
+            "You have no reward for these conditions outcomes"
+        );
+
+        TransferHelper.safeTransferFrom(
+            token,
+            address(this),
+            msg.sender,
+            totalPayout
+        );
+
+        emit BetterWin(msg.sender, tokenIDs, totalPayout);
     }
 
     /**
