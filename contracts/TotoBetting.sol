@@ -47,12 +47,12 @@ contract TotoBetting is OwnableUpgradeable {
     event OracleRenounced(address indexed oracle);
 
     event ConditionCreated(
-        uint256 indexed oracleCondID,
+        uint256 indexed oracleConditionID,
         uint256 indexed conditionID,
         uint64 timestamp
     );
     event ConditionResolved(
-        uint256 indexed oracleCondID,
+        uint256 indexed oracleConditionID,
         uint256 indexed conditionID,
         uint64 outcomeWin
     );
@@ -65,11 +65,6 @@ contract TotoBetting is OwnableUpgradeable {
         uint128 amount
     );
 
-    event BetterWin(
-        address indexed better,
-        uint256 indexed tokenID,
-        uint256 amount
-    );
     event BetterWin(
         address indexed better,
         uint256[] indexed tokenIDs,
@@ -123,11 +118,14 @@ contract TotoBetting is OwnableUpgradeable {
         require(token_ != address(0), "Wrong token");
 
         __Ownable_init();
+        decimals = 10**9;
+
+        require(fee_ < decimals, "Fee share should be less than 100%");
+
         betToken = ITotoBet(totoBet_);
         oracles[oracle_] = true;
-        DAOFee = fee_;
         expireTimer = 600;
-        decimals = 10**9;
+        DAOFee = fee_;
     }
 
     /**
@@ -380,14 +378,17 @@ contract TotoBetting is OwnableUpgradeable {
             msg.sender,
             payout
         );
+        // NewBet event must have the same signatures in case of one condition outcome or multiple conditions outcomes
+        uint256[] tokenIDs;
+        tokenIDs[0] = tokenID;
 
-        emit BetterWin(msg.sender, tokenID, payout);
+        emit BetterWin(msg.sender, tokenIDs, payout);
     }
 
     /**
      * @dev withdraw bettor prizes
      * @param conditionsIDs_ matches or games ids in format
-     *                      [Condition 1 ID, Condition 2 ID, ...]
+     *                       [Condition 1 ID, Condition 2 ID, ...]
      * @param outcomesWin_ outcomes ids on which bets were placed in format
      *                     [Condition 1 outcomeID, Condition 2 outcomeID, ...]
      */
