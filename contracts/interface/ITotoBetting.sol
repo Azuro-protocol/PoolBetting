@@ -12,8 +12,8 @@ interface ITotoBetting {
     struct Condition {
         uint128[2] totalNetBets;
         uint64[2] outcomes;
-        bytes32 ipfsHash;
         uint128 scopeID;
+        bytes32 ipfsHash;
         uint64 outcomeWon;
         uint64 timestamp;
         conditionState state;

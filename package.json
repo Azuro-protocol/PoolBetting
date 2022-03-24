@@ -1,15 +1,24 @@
 {
-  "name": "hardhat-project",
+  "name": "Toto Betting",
+  "version": "1.0.0",
+  "description": "",
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.5",
     "@nomiclabs/hardhat-waffle": "^2.0.3",
+    "@openzeppelin/contracts": "^4.1.0",
     "@openzeppelin/contracts-upgradeable": "^4.5.2",
     "@openzeppelin/hardhat-upgrades": "^1.16.0",
     "@uniswap/lib": "^4.0.1-alpha",
+    "chai": "^4.3.6",
     "ethereum-waffle": "^3.4.0",
-    "ethers": "^5.6.0",
+    "ethers": "^5.6.1",
     "hardhat": "^2.9.1",
+    "hardhat-contract-sizer": "^2.0.3",
+    "hardhat-gas-reporter": "^1.0.8",
     "prettier": "^2.6.0",
     "prettier-plugin-solidity": "^1.0.0-beta.19"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.5.0"
   }
 }

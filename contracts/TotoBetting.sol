@@ -17,13 +17,13 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     // The condition expires if during this time before it starts there were no bets on one of the outcomes
     uint64 public expireTimer;
 
-    uint128 public decimals;
+    uint128 public multiplier;
 
     mapping(address => bool) public oracles;
     mapping(address => mapping(uint256 => uint256)) public oracleConditionIDs; // oracle -> oracleConditionID -> conditionID
 
     mapping(uint256 => Condition) public conditions;
-    uint256 public lastConditionID;
+    uint256 public lastConditionID; // starts with 1
 
     /**
      * @notice Requires the function to be called only by oracle
@@ -47,10 +47,11 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
 
         __Ownable_init();
         __ERC1155_init("Toto Betting");
-        decimals = 10**9;
+        multiplier = 10**9;
 
-        require(fee_ < decimals, "Fee share should be less than 100%");
+        require(fee_ < multiplier, "Fee share should be less than 100%");
 
+        token = token_;
         oracles[oracle_] = true;
         expireTimer = 600;
         DAOFee = fee_;
@@ -84,23 +85,22 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
      */
     function createCondition(
         uint256 oracleConditionID_,
-        uint64[2] calldata outcomes_,
         uint128 scopeID_,
+        uint64[2] calldata outcomes_,
         uint64 timestamp_,
         bytes32 ipfsHash_
     ) external onlyOracle {
-        require(timestamp_ > 0, "Timestamp can not be zero");
-        require(
-            timestamp_ + expireTimer < block.timestamp,
-            "Condition is expired"
-        );
         require(
             oracleConditionIDs[msg.sender][oracleConditionID_] == 0,
             "Condition already exists"
         );
+        require(outcomes_[0] != outcomes_[1], "Incorrect outcomes");
+        require(
+            timestamp_ > block.timestamp + expireTimer,
+            "Condition is expired"
+        );
 
-        lastConditionID++;
-        oracleConditionIDs[msg.sender][oracleConditionID_] = lastConditionID;
+        oracleConditionIDs[msg.sender][oracleConditionID_] = ++lastConditionID;
 
         Condition storage newCondition = conditions[lastConditionID];
         newCondition.outcomes = outcomes_;
@@ -124,7 +124,8 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
         uint256 conditionID = oracleConditionIDs[msg.sender][
             oracleConditionID_
         ];
-        Condition storage condition = conditions[conditionID];
+
+        Condition storage condition = getCondition(conditionID);
 
         require(!conditionIsCanceled(conditionID), "Condition is canceled");
         require(
@@ -137,17 +138,31 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
         );
         outcomeIsCorrect(condition, outcomeWon_);
 
-        uint128[2] memory fees = [
-            (condition.totalNetBets[0] * DAOFee) / decimals,
-            (condition.totalNetBets[1] * DAOFee) / decimals
-        ];
-        condition.totalNetBets[0] -= fees[0];
-        condition.totalNetBets[1] -= fees[1];
-        DAOReward += fees[0] + fees[1];
+        DAOReward +=
+            ((condition.totalNetBets[0] + condition.totalNetBets[1]) * DAOFee) /
+            multiplier;
 
+        condition.outcomeWon = outcomeWon_;
         condition.state = conditionState.RESOLVED;
 
         emit ConditionResolved(oracleConditionID_, conditionID, outcomeWon_);
+    }
+
+    /**
+     * @notice Get condition with id `conditionID_`
+     * @param  conditionID_ the match or game id
+     * @return the match or game struct
+     */
+    function getCondition(uint256 conditionID_)
+        internal
+        view
+        returns (Condition storage)
+    {
+        Condition storage condition = conditions[conditionID_];
+
+        require(condition.timestamp > 0, "Condition does not exist");
+
+        return condition;
     }
 
     /**
@@ -167,23 +182,18 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     }
 
     /**
-     * @notice Require the condition is existing
-     * @param  condition_ the match or game struct
-     */
-    function conditionExists(Condition memory condition_) internal pure {
-        require(condition_.timestamp > 0, "Condition does not exist");
-    }
-
-    /**
      * @notice  Oracle: Indicate the condition `oracleConditionID_` as canceled
      * @param   oracleConditionID_ the current match or game id in oracle's internal system
      */
-    function cancelCondition(uint256 oracleConditionID_) internal onlyOracle {
-        Condition storage condition = conditions[
+    function cancelCondition(uint256 oracleConditionID_) external onlyOracle {
+        Condition storage condition = getCondition(
             oracleConditionIDs[msg.sender][oracleConditionID_]
-        ];
+        );
 
-        conditionExists(condition);
+        require(
+            condition.state != conditionState.RESOLVED,
+            "Condition is resolved"
+        );
         require(
             condition.state != conditionState.CANCELED,
             "Condition is already canceled"
@@ -199,9 +209,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
      * @return true if the condition is canceled else false
      */
     function conditionIsCanceled(uint256 conditionID_) internal returns (bool) {
-        Condition storage condition = conditions[conditionID_];
-
-        conditionExists(condition);
+        Condition storage condition = getCondition(conditionID_);
 
         if (condition.state == conditionState.CANCELED) {
             return true;
@@ -218,6 +226,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
 
     /**
      * @notice Bet `amount_` tokens that in the condition `conditionID_` will happen outcome with id `outcome_`
+     * @dev    Minted tokenID = 2 * `conditionID_` + index of outcome `outcome_` in condition struct
      * @param  conditionID_ the match or game id
      * @param  outcome_ id of predicted outcome
      * @param  amount_ bet amount in tokens
@@ -229,7 +238,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     ) external {
         require(amount_ > 0, "Bet amount must not be zero");
 
-        Condition storage condition = conditions[conditionID_];
+        Condition storage condition = getCondition(conditionID_);
 
         require(
             !conditionIsCanceled(conditionID_) &&
@@ -238,11 +247,9 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
         );
         outcomeIsCorrect(condition, outcome_);
 
-        uint8 outcomeIndex = (outcome_ == condition.outcomes[0] ? 0 : 1);
+        uint256 tokenID = getTokenID(conditionID_, outcome_);
 
-        condition.totalNetBets[outcomeIndex] += amount_;
-
-        uint256 tokenID = conditionID_ * 2 + outcomeIndex;
+        condition.totalNetBets[(tokenID + 1) % 2] += amount_;
 
         super._mint(msg.sender, tokenID, amount_, "");
 
@@ -257,16 +264,34 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     }
 
     /**
+     * @notice Get token id of bet on outcome `outcome_` in condition `conditionID_`
+     * @param  conditionID_ the match or game id
+     * @param  outcome_ id of predicted outcome
+     * @return bet token id
+     */
+    function getTokenID(uint256 conditionID_, uint64 outcome_)
+        public
+        view
+        returns (uint256)
+    {
+        Condition memory condition = getCondition(conditionID_);
+
+        outcomeIsCorrect(condition, outcome_);
+
+        return conditionID_ * 2 - (outcome_ == condition.outcomes[0] ? 1 : 0);
+    }
+
+    /**
      * @notice Withdraw payout based on bets in finished or cancelled conditions
      * @param  tokensIDs_ array of bet tokens ids withdraw payout to
      */
     function withdrawPayout(uint256[] calldata tokensIDs_) external {
         uint256 totalPayout;
-
+        uint256 refunds;
         for (uint256 i = 0; i < tokensIDs_.length; i++) {
             uint256 tokenID = tokensIDs_[i];
-            uint256 conditionID = tokenID / 2;
-            Condition memory condition = conditions[conditionID];
+            uint256 conditionID = (tokenID + 1) / 2;
+            Condition memory condition = getCondition(conditionID);
 
             require(
                 condition.state == conditionState.RESOLVED ||
@@ -279,19 +304,25 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
             require(balance > 0, "You have no bet tokens");
 
             super._burn(msg.sender, tokenID, balance);
-            
-            uint256 outcomeWinIndex = tokenID % 2; // uint256 used to reduce gas consumption
+
+            uint256 outcomeWinIndex = (tokenID + 1) % 2; // uint256 used to reduce gas consumption
             if (condition.state == conditionState.RESOLVED) {
-                if (condition.outcomes[outcomeWinIndex] == condition.outcomeWon) {
+                if (
+                    condition.outcomes[outcomeWinIndex] == condition.outcomeWon
+                ) {
                     totalPayout +=
                         ((condition.totalNetBets[0] +
                             condition.totalNetBets[1]) * balance) /
                         condition.totalNetBets[outcomeWinIndex];
-                } else {
-                    totalPayout += balance;
                 }
+            } else {
+                refunds += balance;
             }
         }
+        totalPayout =
+            (totalPayout * (multiplier - DAOFee)) /
+            multiplier +
+            refunds;
 
         TransferHelper.safeTransfer(token, msg.sender, totalPayout);
 

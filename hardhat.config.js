@@ -1,6 +1,8 @@
 require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-waffle");
 require('@openzeppelin/hardhat-upgrades');
+require('hardhat-contract-sizer');
+require("hardhat-gas-reporter");
 
 
 // This is a sample Hardhat task. To learn how to create your own go to
@@ -33,4 +35,13 @@ module.exports = {
       }
     ]
   },
+  contractSizer: {
+    alphaSort: true,
+    runOnCompile: true,
+    disambiguatePaths: false,
+  },
+  gasReporter: {
+    enabled: true,
+    currency: "USD",
+  }
 };
