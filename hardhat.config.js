@@ -2,6 +2,7 @@ require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-waffle");
 require('@openzeppelin/hardhat-upgrades');
 require('hardhat-contract-sizer');
+require('hardhat-docgen');
 require("hardhat-gas-reporter");
 
 
