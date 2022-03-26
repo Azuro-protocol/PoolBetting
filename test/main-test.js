@@ -62,7 +62,7 @@ describe("TotoBetting test", function () {
     it("Only oracle can interact with conditions", async () => {
       await expect(
         createCondition(totoBetting, addr1, oracleCondID, SCOPE_ID, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS)
-      ).to.be.revertedWith("Oracle only");
+      ).to.be.revertedWith("OnlyOracle()");
 
       await createCondition(
         totoBetting,
@@ -74,23 +74,23 @@ describe("TotoBetting test", function () {
         IPFS
       );
 
-      await expect(totoBetting.connect(addr1).cancelCondition(oracleCondID)).to.be.revertedWith("Oracle only");
+      await expect(totoBetting.connect(addr1).cancelCondition(oracleCondID)).to.be.revertedWith("OnlyOracle()");
       await expect(totoBetting.connect(addr1).resolveCondition(oracleCondID, OUTCOMEWIN)).to.be.revertedWith(
-        "Oracle only"
+        "OnlyOracle()"
       );
     });
     it("Should NOT create conditions that will begin soon", async () => {
       await expect(
         createCondition(totoBetting, oracle, oracleCondID, SCOPE_ID, [OUTCOMEWIN, OUTCOMELOSE], time + 1, IPFS)
-      ).to.be.revertedWith("Condition is expired");
+      ).to.be.revertedWith("ConditionExpired()");
     });
     it("Should NOT create conditions with same outcomes", async () => {
       await expect(
         createCondition(totoBetting, oracle, oracleCondID, SCOPE_ID, [OUTCOMEWIN, OUTCOMEWIN], time + ONE_HOUR, IPFS)
-      ).to.be.revertedWith("Incorrect outcome");
+      ).to.be.revertedWith("SameOutcomes()");
     });
     it("Should NOT create duplicate", async () => {
-      await createCondition(
+      condIDHash = await createCondition(
         totoBetting,
         oracle,
         oracleCondID,
@@ -110,21 +110,22 @@ describe("TotoBetting test", function () {
       );
       await expect(
         createCondition(totoBetting, oracle, oracleCondID, SCOPE_ID, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS)
-      ).to.be.revertedWith("Condition already exists");
+      ).to.be.revertedWith(`ConditionAlreadyCreated(${condIDHash})`);
     });
     it("Should NOT interact with nonexistent condition", async () => {
-      await expect(makeBet(totoBetting, bettor, "2000000", OUTCOMEWIN, BET)).to.be.revertedWith(
-        "Condition does not exist"
+      const condIDNotExists = 2000000;
+      await expect(makeBet(totoBetting, bettor, condIDNotExists, OUTCOMEWIN, BET)).to.be.revertedWith(
+        `ConditionNotExists(${condIDNotExists})`
       );
       await expect(totoBetting.connect(oracle).resolveCondition(oracleCondID, OUTCOMEWIN)).to.be.revertedWith(
-        "Condition does not exist"
+        `ConditionNotExists(0)`
       );
       await expect(totoBetting.connect(oracle).cancelCondition(oracleCondID)).to.be.revertedWith(
-        "Condition does not exist"
+        `ConditionNotExists(0)`
       );
     });
     it("Should NOT resolve condition before it starts", async () => {
-      await createCondition(
+      let condIDHash = await createCondition(
         totoBetting,
         oracle,
         oracleCondID,
@@ -135,11 +136,11 @@ describe("TotoBetting test", function () {
       );
 
       await expect(totoBetting.connect(oracle).resolveCondition(oracleCondID, OUTCOMEWIN)).to.be.revertedWith(
-        "Condition has not started yet"
+        `ConditionNotYetStarted(${condIDHash})`
       );
     });
     it("Should NOT resolve canceled condition", async () => {
-      await createCondition(
+      let condIDHash = await createCondition(
         totoBetting,
         oracle,
         oracleCondID,
@@ -150,11 +151,11 @@ describe("TotoBetting test", function () {
       );
 
       await expect(totoBetting.connect(oracle).resolveCondition(oracleCondID, OUTCOMEWIN)).to.be.revertedWith(
-        "Condition has not started yet"
+        `ConditionNotYetStarted(${condIDHash})`
       );
     });
     it("Should NOT resolve condition before it starts", async () => {
-      await createCondition(
+      let condIDHash = await createCondition(
         totoBetting,
         oracle,
         oracleCondID,
@@ -165,7 +166,7 @@ describe("TotoBetting test", function () {
       );
 
       await expect(totoBetting.connect(oracle).resolveCondition(oracleCondID, OUTCOMEWIN)).to.be.revertedWith(
-        "Condition has not started yet"
+        `ConditionNotYetStarted(${condIDHash})`
       );
     });
     it("Should NOT resolve condition with no bets on one of the outcomes", async () => {
@@ -185,7 +186,7 @@ describe("TotoBetting test", function () {
 
         timeShift(time + ONE_HOUR);
         await expect(totoBetting.connect(oracle).resolveCondition(oracleCondID++, OUTCOMEWIN)).to.be.revertedWith(
-          "Condition is canceled"
+          `ConditionCanceled(${condIDHash})`
         );
       }
     });
@@ -205,7 +206,7 @@ describe("TotoBetting test", function () {
 
       timeShift(time + ONE_HOUR);
       await expect(totoBetting.connect(oracle).resolveCondition(oracleCondID, OUTCOMEINCORRECT)).to.be.revertedWith(
-        "Incorrect outcome"
+        "WrongOutcome()"
       );
     });
     it("Should NOT resolve condition twice", async () => {
@@ -225,7 +226,7 @@ describe("TotoBetting test", function () {
       await totoBetting.connect(oracle).resolveCondition(oracleCondID, OUTCOMEWIN);
 
       await expect(totoBetting.connect(oracle).resolveCondition(oracleCondID, OUTCOMEWIN)).to.be.revertedWith(
-        "Condition already set"
+        `ConditionAlreadyResolved(${condIDHash})`
       );
     });
     it("Should NOT cancel resolved condition", async () => {
@@ -245,7 +246,7 @@ describe("TotoBetting test", function () {
       await totoBetting.connect(oracle).resolveCondition(oracleCondID, OUTCOMEWIN);
 
       await expect(totoBetting.connect(oracle).cancelCondition(oracleCondID)).to.be.revertedWith(
-        "Condition is resolved"
+        `ConditionResolved(${condIDHash})`
       );
     });
   });
@@ -276,48 +277,37 @@ describe("TotoBetting test", function () {
       await makeBet(totoBetting, bettor, condIDHash, OUTCOMELOSE, BET);
 
       timeShift(time + ONE_HOUR);
-      await expect(makeBet(totoBetting, bettor, condIDHash, OUTCOMELOSE, BET)).to.be.revertedWith("Bet is not allowed");
+      await expect(makeBet(totoBetting, bettor, condIDHash, OUTCOMELOSE, BET)).to.be.revertedWith(
+        `ConditionStarted(${condIDHash})`
+      );
     });
     it("Should NOT bet on condition that will begin soon if there are no bets on on of the outcomes", async () => {
       await makeBet(totoBetting, bettor, condIDHash, OUTCOMEWIN, BET);
       makeBet(totoBetting, bettor, condIDHash, OUTCOMEWIN, BET);
 
       timeShift(time + ONE_HOUR - 1);
-      await expect(makeBet(totoBetting, bettor, condIDHash, OUTCOMELOSE, BET)).to.be.revertedWith("Bet is not allowed");
+      await expect(makeBet(totoBetting, bettor, condIDHash, OUTCOMELOSE, BET)).to.be.revertedWith(
+        `ConditionCanceled(${condIDHash})`
+      );
     });
-    it("Should NOT bet on resolved or canceled condition", async () => {
+    it("Should NOT bet on canceled condition", async () => {
       await makeBet(totoBetting, bettor, condIDHash, OUTCOMEWIN, BET);
       await makeBet(totoBetting, bettor, condIDHash, OUTCOMELOSE, BET);
 
       timeShift(time + ONE_HOUR);
-      await totoBetting.connect(oracle).resolveCondition(oracleCondID, OUTCOMEWIN);
-
-      await expect(makeBet(totoBetting, bettor, condIDHash, OUTCOMEWIN, BET)).to.be.revertedWith("Bet is not allowed");
-
-      oracleCondID++;
-      time = await getBlockTime(ethers);
-      condIDHash = await createCondition(
-        totoBetting,
-        oracle,
-        oracleCondID,
-        SCOPE_ID,
-        [OUTCOMEWIN, OUTCOMELOSE],
-        time + ONE_HOUR,
-        IPFS
-      );
-
       await totoBetting.connect(oracle).cancelCondition(oracleCondID);
-      await expect(makeBet(totoBetting, bettor, condIDHash, OUTCOMEWIN, BET)).to.be.revertedWith("Bet is not allowed");
+
+      await expect(makeBet(totoBetting, bettor, condIDHash, OUTCOMEWIN, BET)).to.be.revertedWith(
+        `ConditionCanceled(${condIDHash})`
+      );
     });
     it("Should NOT bet on incorrect outcome", async () => {
       await expect(makeBet(totoBetting, bettor, condIDHash, OUTCOMEINCORRECT, BET)).to.be.revertedWith(
-        "Incorrect outcome"
+        "WrongOutcome()"
       );
     });
     it("Should NOT bet with no amount", async () => {
-      await expect(makeBet(totoBetting, bettor, condIDHash, OUTCOMEWIN, 0)).to.be.revertedWith(
-        "Bet amount must not be zero"
-      );
+      await expect(makeBet(totoBetting, bettor, condIDHash, OUTCOMEWIN, 0)).to.be.revertedWith("AmountMustNotBeZero()");
     });
     it("Should NOT bet with insufficient balance", async () => {
       const balance = await usdt.balanceOf(bettor.address);
@@ -392,7 +382,9 @@ describe("TotoBetting test", function () {
     });
     it("Should NOT reward before condition ends", async () => {
       tokenWin = await makeBet(totoBetting, bettor, condIDHash, OUTCOMEWIN, BET);
-      await expect(totoBetting.connect(bettor).withdrawPayout([tokenWin])).to.be.revertedWith("Condition is still on");
+      await expect(totoBetting.connect(bettor).withdrawPayout([tokenWin])).to.be.revertedWith(
+        `ConditionStillOn(${condIDHash})`
+      );
     });
     it("Should NOT reward with zero bet token balance", async () => {
       tokenWin = await makeBet(totoBetting, bettor, condIDHash, OUTCOMEWIN, BET);
@@ -402,7 +394,7 @@ describe("TotoBetting test", function () {
       await totoBetting.connect(oracle).resolveCondition(oracleCondID, OUTCOMEWIN);
 
       await expect(totoBetting.connect(bettor2).withdrawPayout([tokenWin])).to.be.revertedWith(
-        "You have no bet tokens"
+        `ZeroBalance(${tokenWin})`
       );
     });
     it("Should refund bet if condition is canceled", async () => {

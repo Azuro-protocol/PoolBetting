@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity 0.8.3;
+pragma solidity ^0.8.4;
 
 import "./interface/ITotoBetting.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -29,7 +29,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
      * @notice Requires the function to be called only by oracle
      */
     modifier onlyOracle() {
-        require(oracles[msg.sender], "Oracle only");
+        if (!oracles[msg.sender]) revert OnlyOracle();
         _;
     }
 
@@ -43,14 +43,13 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
         address oracle_,
         uint128 fee_
     ) public virtual initializer {
-        require(token_ != address(0), "Wrong token");
+        if (token_ == address(0)) revert WrongToken();
 
         __Ownable_init();
         __ERC1155_init("Toto Betting");
         multiplier = 10**9;
 
-        require(fee_ < multiplier, "Fee share should be less than 100%");
-
+        if (fee_ >= multiplier) revert WrongFee();
         token = token_;
         oracles[oracle_] = true;
         expireTimer = 600;
@@ -90,15 +89,13 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
         uint64 timestamp_,
         bytes32 ipfsHash_
     ) external onlyOracle {
-        require(
-            oracleConditionIDs[msg.sender][oracleConditionID_] == 0,
-            "Condition already exists"
-        );
-        require(outcomes_[0] != outcomes_[1], "Incorrect outcomes");
-        require(
-            timestamp_ > block.timestamp + expireTimer,
-            "Condition is expired"
-        );
+        uint256 conditionID = oracleConditionIDs[msg.sender][
+            oracleConditionID_
+        ];
+        if (conditionID != 0) revert ConditionAlreadyCreated(conditionID);
+        if (outcomes_[0] == outcomes_[1]) revert SameOutcomes();
+        if (timestamp_ <= block.timestamp + expireTimer)
+            revert ConditionExpired();
 
         oracleConditionIDs[msg.sender][oracleConditionID_] = ++lastConditionID;
 
@@ -127,15 +124,13 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
 
         Condition storage condition = getCondition(conditionID);
 
-        require(!conditionIsCanceled(conditionID), "Condition is canceled");
-        require(
-            condition.state == conditionState.CREATED,
-            "Condition already set"
-        );
-        require(
-            block.timestamp >= condition.timestamp,
-            "Condition has not started yet"
-        );
+        if (conditionIsCanceled(conditionID))
+            revert ConditionCanceled(conditionID);
+        if (condition.state != conditionState.CREATED)
+            revert ConditionAlreadyResolved(conditionID);
+        if (block.timestamp < condition.timestamp)
+            revert ConditionNotYetStarted(conditionID);
+
         outcomeIsCorrect(condition, outcomeWon_);
 
         DAOReward +=
@@ -145,7 +140,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
         condition.outcomeWon = outcomeWon_;
         condition.state = conditionState.RESOLVED;
 
-        emit ConditionResolved(oracleConditionID_, conditionID, outcomeWon_);
+        emit ConditionSet(oracleConditionID_, conditionID, outcomeWon_);
     }
 
     /**
@@ -160,7 +155,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     {
         Condition storage condition = conditions[conditionID_];
 
-        require(condition.timestamp > 0, "Condition does not exist");
+        if (condition.timestamp == 0) revert ConditionNotExists(conditionID_);
 
         return condition;
     }
@@ -170,15 +165,14 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
      * @param  condition_ the match or game struct
      * @param  outcome_ outcome id
      */
-    function outcomeIsCorrect(Condition memory condition_, uint256 outcome_)
+    function outcomeIsCorrect(Condition memory condition_, uint64 outcome_)
         internal
         pure
     {
-        require(
-            outcome_ == condition_.outcomes[0] ||
-                outcome_ == condition_.outcomes[1],
-            "Incorrect outcome"
-        );
+        if (
+            outcome_ != condition_.outcomes[0] &&
+            outcome_ != condition_.outcomes[1]
+        ) revert WrongOutcome();
     }
 
     /**
@@ -186,18 +180,15 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
      * @param   oracleConditionID_ the current match or game id in oracle's internal system
      */
     function cancelCondition(uint256 oracleConditionID_) external onlyOracle {
-        Condition storage condition = getCondition(
-            oracleConditionIDs[msg.sender][oracleConditionID_]
-        );
+        uint256 conditionID = oracleConditionIDs[msg.sender][
+            oracleConditionID_
+        ];
+        Condition storage condition = getCondition(conditionID);
 
-        require(
-            condition.state != conditionState.RESOLVED,
-            "Condition is resolved"
-        );
-        require(
-            condition.state != conditionState.CANCELED,
-            "Condition is already canceled"
-        );
+        if (condition.state == conditionState.RESOLVED)
+            revert ConditionResolved(conditionID);
+        if (condition.state == conditionState.CANCELED)
+            revert ConditionAlreadyCanceled(conditionID);
 
         condition.state = conditionState.CANCELED;
     }
@@ -236,15 +227,15 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
         uint64 outcome_,
         uint128 amount_
     ) external {
-        require(amount_ > 0, "Bet amount must not be zero");
+        if (amount_ == 0) revert AmountMustNotBeZero();
 
         Condition storage condition = getCondition(conditionID_);
 
-        require(
-            !conditionIsCanceled(conditionID_) &&
-                block.timestamp < condition.timestamp,
-            "Bet is not allowed"
-        );
+        if (conditionIsCanceled(conditionID_))
+            revert ConditionCanceled(conditionID_);
+        if (block.timestamp >= condition.timestamp)
+            revert ConditionStarted(conditionID_);
+
         outcomeIsCorrect(condition, outcome_);
 
         uint256 tokenID = getTokenID(conditionID_, outcome_);
@@ -290,18 +281,17 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
         uint256 refunds;
         for (uint256 i = 0; i < tokensIDs_.length; i++) {
             uint256 tokenID = tokensIDs_[i];
+            uint256 balance = super.balanceOf(msg.sender, tokenID);
+
+            if (balance == 0) revert ZeroBalance(tokenID);
+
             uint256 conditionID = (tokenID + 1) / 2;
             Condition memory condition = getCondition(conditionID);
 
-            require(
-                condition.state == conditionState.RESOLVED ||
-                    conditionIsCanceled(conditionID),
-                "Condition is still on"
-            );
-
-            uint256 balance = super.balanceOf(msg.sender, tokenID);
-
-            require(balance > 0, "You have no bet tokens");
+            if (
+                condition.state != conditionState.RESOLVED &&
+                !conditionIsCanceled(conditionID)
+            ) revert ConditionStillOn(conditionID);
 
             super._burn(msg.sender, tokenID, balance);
 
@@ -333,8 +323,6 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
      * @notice Reward contract owner with total amount of charged fees
      */
     function claimDAOReward() external {
-        require(DAOReward > 0, "No DAO reward");
-
         uint128 reward = DAOReward;
         DAOReward = 0;
         TransferHelper.safeTransfer(token, owner(), reward);

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity 0.8.3;
+pragma solidity ^0.8.4;
 
 interface ITotoBetting {
     enum conditionState {
@@ -29,7 +29,7 @@ interface ITotoBetting {
         uint256 indexed conditionID,
         uint64 timestamp
     );
-    event ConditionResolved(
+    event ConditionSet(
         uint256 indexed oracleConditionID,
         uint256 indexed conditionID,
         uint64 outcomeWin
@@ -48,4 +48,25 @@ interface ITotoBetting {
         uint256[] indexed tokensIDs,
         uint256 amount
     );
+
+    error OnlyOracle();
+
+    error WrongToken();
+    error WrongFee();
+    error WrongOutcome();
+    error SameOutcomes();
+    error ConditionExpired();
+
+    error ConditionNotExists(uint256 conditionID);
+    error ConditionAlreadyCreated(uint256 conditionID);
+    error ConditionNotYetStarted(uint256 conditionID);
+    error ConditionStillOn(uint256 conditionID);
+    error ConditionStarted(uint256 conditionID);
+    error ConditionResolved(uint256 conditionID);
+    error ConditionAlreadyResolved(uint256 conditionID);
+    error ConditionCanceled(uint256 conditionID);
+    error ConditionAlreadyCanceled(uint256 conditionID);
+
+    error AmountMustNotBeZero();
+    error ZeroBalance(uint256 tokenID);
 }
