@@ -68,6 +68,10 @@ async function timeShift(time) {
   await network.provider.send("evm_mine");
 }
 
+function timeout(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function tokens(val) {
   return BigNumber.from(val).mul(BigNumber.from("10").pow(6)).toString();
 }
@@ -78,5 +82,6 @@ module.exports = {
   makeBet,
   getBlockTime,
   timeShift,
-  tokens,
+  timeout,
+  tokens
 };
