@@ -83,4 +83,10 @@ module.exports = {
     enabled: true,
     currency: "USD",
   },
+  docgen: {
+    path: "./docs",
+    clear: false,
+    only: ["TotoBetting"],
+    runOnCompile: true,
+  },
 };
