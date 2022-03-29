@@ -14,7 +14,9 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     uint128 public DAOFee;
     uint128 public DAOReward;
 
-    // The condition expires if during this time before it starts there were no bets on one of the outcomes
+    /**
+     * @notice The condition expires if during this time before it starts there were no bets on one of the outcomes
+     */
     uint64 public expireTimer;
 
     uint128 public multiplier;
@@ -29,7 +31,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
      * @notice Requires the function to be called only by oracle
      */
     modifier onlyOracle() {
-        if (!oracles[msg.sender]) revert OnlyOracle();
+        if (!oracles[msg.sender]) revert EOnlyOracle();
         _;
     }
 
@@ -43,13 +45,13 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
         address oracle_,
         uint128 fee_
     ) public virtual initializer {
-        if (token_ == address(0)) revert WrongToken();
+        if (token_ == address(0)) revert EWrongToken();
 
         __Ownable_init();
         __ERC1155_init("Toto Betting");
         multiplier = 10**9;
 
-        if (fee_ >= multiplier) revert WrongFee();
+        if (fee_ >= multiplier) revert EWrongFee();
         token = token_;
         oracles[oracle_] = true;
         expireTimer = 600;
@@ -92,10 +94,10 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
         uint256 conditionID = oracleConditionIDs[msg.sender][
             oracleConditionID_
         ];
-        if (conditionID != 0) revert ConditionAlreadyCreated(conditionID);
-        if (outcomes_[0] == outcomes_[1]) revert SameOutcomes();
+        if (conditionID != 0) revert EConditionAlreadyCreated(conditionID);
+        if (outcomes_[0] == outcomes_[1]) revert ESameOutcomes();
         if (timestamp_ <= block.timestamp + expireTimer)
-            revert ConditionExpired();
+            revert EConditionExpired();
 
         oracleConditionIDs[msg.sender][oracleConditionID_] = ++lastConditionID;
 
@@ -125,11 +127,11 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
         Condition storage condition = getCondition(conditionID);
 
         if (conditionIsCanceled(conditionID))
-            revert ConditionCanceled(conditionID);
+            revert EConditionCanceled(conditionID);
         if (condition.state != conditionState.CREATED)
-            revert ConditionAlreadyResolved(conditionID);
+            revert EConditionAlreadyResolved(conditionID);
         if (block.timestamp < condition.timestamp)
-            revert ConditionNotYetStarted(conditionID);
+            revert EConditionNotYetStarted(conditionID);
 
         outcomeIsCorrect(condition, outcomeWon_);
 
@@ -140,7 +142,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
         condition.outcomeWon = outcomeWon_;
         condition.state = conditionState.RESOLVED;
 
-        emit ConditionSet(oracleConditionID_, conditionID, outcomeWon_);
+        emit ConditionResolved(oracleConditionID_, conditionID, outcomeWon_);
     }
 
     /**
@@ -155,7 +157,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     {
         Condition storage condition = conditions[conditionID_];
 
-        if (condition.timestamp == 0) revert ConditionNotExists(conditionID_);
+        if (condition.timestamp == 0) revert EConditionNotExists(conditionID_);
 
         return condition;
     }
@@ -172,7 +174,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
         if (
             outcome_ != condition_.outcomes[0] &&
             outcome_ != condition_.outcomes[1]
-        ) revert WrongOutcome();
+        ) revert EWrongOutcome();
     }
 
     /**
@@ -186,11 +188,13 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
         Condition storage condition = getCondition(conditionID);
 
         if (condition.state == conditionState.RESOLVED)
-            revert ConditionResolved(conditionID);
+            revert EConditionResolved(conditionID);
         if (condition.state == conditionState.CANCELED)
-            revert ConditionAlreadyCanceled(conditionID);
+            revert EConditionAlreadyCanceled(conditionID);
 
         condition.state = conditionState.CANCELED;
+
+        emit ConditionCanceled(conditionID);
     }
 
     /**
@@ -210,6 +214,9 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
             (condition.totalNetBets[0] == 0 || condition.totalNetBets[1] == 0)
         ) {
             condition.state = conditionState.CANCELED;
+
+            emit ConditionCanceled(conditionID_);
+
             return true;
         }
         return false;
@@ -227,14 +234,14 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
         uint64 outcome_,
         uint128 amount_
     ) external {
-        if (amount_ == 0) revert AmountMustNotBeZero();
+        if (amount_ == 0) revert EAmountMustNotBeZero();
 
         Condition storage condition = getCondition(conditionID_);
 
         if (conditionIsCanceled(conditionID_))
-            revert ConditionCanceled(conditionID_);
+            revert EConditionCanceled(conditionID_);
         if (block.timestamp >= condition.timestamp)
-            revert ConditionStarted(conditionID_);
+            revert EConditionStarted(conditionID_);
 
         outcomeIsCorrect(condition, outcome_);
 
@@ -283,7 +290,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
             uint256 tokenID = tokensIDs_[i];
             uint256 balance = super.balanceOf(msg.sender, tokenID);
 
-            if (balance == 0) revert ZeroBalance(tokenID);
+            if (balance == 0) revert EZeroBalance(tokenID);
 
             uint256 conditionID = (tokenID + 1) / 2;
             Condition memory condition = getCondition(conditionID);
@@ -291,7 +298,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
             if (
                 condition.state != conditionState.RESOLVED &&
                 !conditionIsCanceled(conditionID)
-            ) revert ConditionStillOn(conditionID);
+            ) revert EConditionStillOn(conditionID);
 
             super._burn(msg.sender, tokenID, balance);
 
@@ -316,7 +323,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
 
         TransferHelper.safeTransfer(token, msg.sender, totalPayout);
 
-        emit BetterWin(msg.sender, tokensIDs_, totalPayout);
+        emit BettorWin(msg.sender, tokensIDs_, totalPayout);
     }
 
     /**

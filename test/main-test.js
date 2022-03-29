@@ -311,7 +311,9 @@ describe("TotoBetting test", function () {
     });
     it("Should NOT bet with insufficient balance", async () => {
       const balance = await usdt.balanceOf(bettor.address);
-      await expect(makeBet(totoBetting, addr1, condIDHash, OUTCOMEWIN, balance.add(1))).to.be.reverted;
+      await expect(makeBet(totoBetting, addr1, condIDHash, OUTCOMEWIN, balance.add(1))).to.be.revertedWith(
+        "transferFrom failed"
+      );
     });
   });
   describe("Payouts", async function () {
