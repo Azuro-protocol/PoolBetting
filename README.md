@@ -6,7 +6,11 @@
 - [Oracle](./docs/oracle/index.html)  
 - [Bettor](./docs/bettor/index.html)
 ## Usage
-
+### Prerequisites
+1. Install hardhat locally in the project folder:
+   ```
+   npm install --save-dev hardhat
+   ```
 ### Compile
 
 ```
