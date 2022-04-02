@@ -1,5 +1,5 @@
 {
-  "name": "Toto Betting",
+  "name": "TotoBetting",
   "version": "1.0.0",
   "description": "",
   "scripts": {
@@ -7,7 +7,7 @@
     "docgen": "npx hardhat docgen",
     "size-contracts": "npx hardhat size-contracts",
     "prettier-sol": "prettier --write \"contracts/**/*.sol\"",
-    "prettier-test": "npx prettier --write test --print-width 120 --tab-width 2",
+    "prettier-js": "npx prettier --write **/*.js --print-width 120 --tab-width 2",
     "test": "npx hardhat test",
     "node": "npx hardhat node",
     "deploy": "npx hardhat run scripts/deployWithOracle.js --network",

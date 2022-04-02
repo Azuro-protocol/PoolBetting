@@ -73,7 +73,7 @@ function timeout(ms) {
 }
 
 function tokens(val) {
-  return BigNumber.from(val).mul(BigNumber.from("10").pow(6)).toString();
+  return BigNumber.from(val).mul(BigNumber.from("10").pow(18)).toString();
 }
 
 module.exports = {
@@ -83,5 +83,5 @@ module.exports = {
   getBlockTime,
   timeShift,
   timeout,
-  tokens
+  tokens,
 };

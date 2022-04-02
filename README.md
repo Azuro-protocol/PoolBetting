@@ -32,11 +32,7 @@ npm run node
 ### Deploy contract
 1. Fill up environment with networks keys you are going to use:
    - **ALCHEMY_API_KEY_RINKEBY** (for node connection)
-   - **ALCHEMY_API_KEY_KOVAN** (for node connection)
-   - **KOVAN_PRIVATE_KEY**
    - **RINKEBY_PRIVATE_KEY**
-   - **MAINNET_PRIVATE_KEY**
-   - **BSC_PRIVATE_KEY**
    - **ETHERSCAN_API_KEY** (for contract verification)
 2. Run command:
    ```

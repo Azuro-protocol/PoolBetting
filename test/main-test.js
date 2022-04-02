@@ -281,15 +281,18 @@ describe("TotoBetting test", function () {
         `ConditionStarted(${condIDHash})`
       );
     });
-    it("Should NOT bet on condition that will begin soon if there are no bets on on of the outcomes", async () => {
-      await makeBet(totoBetting, bettor, condIDHash, OUTCOMEWIN, BET);
-      makeBet(totoBetting, bettor, condIDHash, OUTCOMEWIN, BET);
+    it(
+      "Should NOT bet on condition that will begin soon  " + "if there are no bets on on of the outcomes",
+      async () => {
+        await makeBet(totoBetting, bettor, condIDHash, OUTCOMEWIN, BET);
+        makeBet(totoBetting, bettor, condIDHash, OUTCOMEWIN, BET);
 
-      timeShift(time + ONE_HOUR - 1);
-      await expect(makeBet(totoBetting, bettor, condIDHash, OUTCOMELOSE, BET)).to.be.revertedWith(
-        `ConditionCanceled(${condIDHash})`
-      );
-    });
+        timeShift(time + ONE_HOUR - 1);
+        await expect(makeBet(totoBetting, bettor, condIDHash, OUTCOMELOSE, BET)).to.be.revertedWith(
+          `ConditionCanceled(${condIDHash})`
+        );
+      }
+    );
     it("Should NOT bet on canceled condition", async () => {
       await makeBet(totoBetting, bettor, condIDHash, OUTCOMEWIN, BET);
       await makeBet(totoBetting, bettor, condIDHash, OUTCOMELOSE, BET);
