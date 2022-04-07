@@ -32,7 +32,10 @@ interface ITotoBetting {
         uint256 indexed conditionID,
         uint64 outcomeWin
     );
-    event ConditionCanceled(uint256 indexed conditionID);
+    event ConditionCanceled(
+        uint256 indexed oracleConditionID,
+        uint256 indexed conditionID
+    );
 
     event NewBet(
         address indexed owner,

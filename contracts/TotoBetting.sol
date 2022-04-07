@@ -7,6 +7,8 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
+import "hardhat/console.sol";
+
 /// @title Azuro Totalizator main contract
 contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     address public token;
@@ -19,7 +21,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
      */
     uint64 public expireTimer;
 
-    uint128 public multiplier;
+    uint128 public denominator;
 
     mapping(address => bool) public oracles;
     mapping(address => mapping(uint256 => uint256)) public oracleConditionIDs; // oracle -> oracleConditionID -> conditionID
@@ -44,14 +46,14 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
         address token_,
         address oracle_,
         uint128 fee_
-    ) public virtual initializer {
+    ) external virtual initializer {
         if (token_ == address(0)) revert EWrongToken();
 
         __Ownable_init();
         __ERC1155_init("Toto Betting");
-        multiplier = 10**9;
+        denominator = 10**9;
 
-        if (fee_ >= multiplier) revert EWrongFee();
+        if (fee_ >= denominator) revert EWrongFee();
         token = token_;
         oracles[oracle_] = true;
         expireTimer = 600;
@@ -106,7 +108,6 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
         newCondition.scopeID = scopeID_;
         newCondition.timestamp = timestamp_;
         newCondition.ipfsHash = ipfsHash_;
-        newCondition.state = conditionState.CREATED;
 
         emit ConditionCreated(oracleConditionID_, lastConditionID, timestamp_);
     }
@@ -137,7 +138,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
 
         DAOReward +=
             ((condition.totalNetBets[0] + condition.totalNetBets[1]) * DAOFee) /
-            multiplier;
+            denominator;
 
         condition.outcomeWon = outcomeWon_;
         condition.state = conditionState.RESOLVED;
@@ -194,7 +195,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
 
         condition.state = conditionState.CANCELED;
 
-        emit ConditionCanceled(conditionID);
+        emit ConditionCanceled(oracleConditionID_, conditionID);
     }
 
     /**
@@ -215,7 +216,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
         ) {
             condition.state = conditionState.CANCELED;
 
-            emit ConditionCanceled(conditionID_);
+            emit ConditionCanceled(0, conditionID_);
 
             return true;
         }
@@ -245,7 +246,9 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
 
         outcomeIsCorrect(condition, outcome_);
 
-        uint256 tokenID = getTokenID(conditionID_, outcome_);
+        uint256 tokenID = conditionID_ *
+            2 -
+            (outcome_ == condition.outcomes[0] ? 1 : 0);
 
         condition.totalNetBets[(tokenID + 1) % 2] += amount_;
 
@@ -317,8 +320,8 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
             }
         }
         totalPayout =
-            (totalPayout * (multiplier - DAOFee)) /
-            multiplier +
+            (totalPayout * (denominator - DAOFee)) /
+            denominator +
             refunds;
 
         TransferHelper.safeTransfer(token, msg.sender, totalPayout);

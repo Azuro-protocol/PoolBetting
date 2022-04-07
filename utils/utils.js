@@ -1,14 +1,12 @@
 const { BigNumber } = require("@ethersproject/bignumber");
 
-const prepareStand = async (ethers, owner, oracle, oracle2, bettor, bettor2, fee) => {
-  const mintableAmount = tokens(8_000_000);
+const prepareStand = async (ethers, owner, oracle, oracle2, fee) => {
+  const mintableAmount = tokens(10 ** 9);
   // test USDT
   Usdt = await ethers.getContractFactory("TestERC20");
   usdt = await Usdt.deploy();
   await usdt.deployed();
   await usdt.mint(owner.address, mintableAmount);
-  await usdt.mint(bettor.address, mintableAmount);
-  await usdt.mint(bettor2.address, mintableAmount);
 
   // toto betting core
   TotoBetting = await ethers.getContractFactory("TotoBetting");
@@ -18,10 +16,8 @@ const prepareStand = async (ethers, owner, oracle, oracle2, bettor, bettor2, fee
   // setting up
   await totoBetting.connect(owner).addOracle(oracle2.address);
 
-  const approveAmount = tokens(999_999_999_999_999);
+  const approveAmount = tokens(10 ** 9);
   await usdt.approve(totoBetting.address, approveAmount);
-  await usdt.connect(bettor).approve(totoBetting.address, approveAmount);
-  await usdt.connect(bettor2).approve(totoBetting.address, approveAmount);
 
   return [totoBetting, usdt];
 };
