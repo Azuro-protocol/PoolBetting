@@ -1,7 +1,15 @@
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 const { ethers } = require("hardhat");
-const { prepareStand, createCondition, makeBet, getBlockTime, timeShift, tokens } = require("../utils/utils");
+const {
+  prepareStand,
+  createCondition,
+  makeBet,
+  getBlockTime,
+  timeShift,
+  tokens,
+  randomTokens,
+} = require("../utils/utils");
 
 const ORACLE_CONDITION_START = 1000000;
 const SCOPE_ID = 1;
@@ -87,7 +95,7 @@ describe("TotoBetting test", function () {
         for (let k = 0; k < nBettors; k++) {
           bettor = bettors[k];
           outcome = k == 0 ? OUTCOMEWIN : k == 1 ? OUTCOMELOSE : Math.random() > 1 / 2 ? OUTCOMEWIN : OUTCOMELOSE;
-          bet = tokens(Math.floor(Math.random() * 100 + 1));
+          bet = randomTokens(2);
           totalNetBets = totalNetBets.add(bet);
           if (outcome == OUTCOMEWIN) {
             totalWinBets = totalWinBets.add(bet);
@@ -149,7 +157,7 @@ describe("TotoBetting test", function () {
         for (let k = 0; k < nBettors; k++) {
           bettor = bettors[k];
           outcome = k == 0 ? OUTCOMEWIN : k == 1 ? OUTCOMELOSE : Math.random() > 1 / 2 ? OUTCOMEWIN : OUTCOMELOSE;
-          bet = Math.random() > 1 / 2 ? tokens(Math.floor(Math.random() * 100 + 1)) : Math.floor(Math.random() * 5 + 1);
+          bet = Math.random() > 1 / 2 ? randomTokens(2) : Math.floor(Math.random() * 5 + 1);
           totalNetBets = totalNetBets.add(bet);
           if (outcome == OUTCOMEWIN) {
             totalWinBets = totalWinBets.add(bet);
@@ -185,6 +193,60 @@ describe("TotoBetting test", function () {
         }
       }
     });
+    it("Withdraw reward but from several conditions", async () => {
+      let bets = [],
+        betTokens = [],
+        winTokens = [];
+      let nConditions;
+      let bettor, balance, reward, bet, outcome, betToken;
+
+      for (let i = 0; i < TRIES; i++) {
+        nConditions = Math.floor(Math.random() * (MAX_BETTORS - MIN_BETTORS + 1) + MIN_BETTORS);
+        bettor = bettors[0];
+        reward = BigNumber.from(0);
+
+        for (let k = 0; k < nConditions; k++) {
+          oracleCondID++;
+          time = await getBlockTime(ethers);
+          condIDHash = await createCondition(
+            totoBetting,
+            oracle,
+            oracleCondID,
+            SCOPE_ID,
+            [OUTCOMEWIN, OUTCOMELOSE],
+            time + ONE_HOUR,
+            IPFS
+          );
+
+          winTokens[k] = await makeBet(totoBetting, bettor2, condIDHash, OUTCOMEWIN, BET);
+          await makeBet(totoBetting, bettor2, condIDHash, OUTCOMELOSE, BET);
+
+          outcome = k == 0 ? OUTCOMEWIN : k == 1 ? OUTCOMELOSE : Math.random() > 1 / 2 ? OUTCOMEWIN : OUTCOMELOSE;
+          bet = randomTokens(2);
+          bets[k] = bet;
+
+          betToken = await makeBet(totoBetting, bettor, condIDHash, outcome, bet);
+          expect(await totoBetting.balanceOf(bettor.address, betToken)).to.be.equal(bet);
+          betTokens[k] = betToken;
+
+          timeShift(time + ONE_HOUR);
+          await totoBetting.connect(oracle).resolveCondition(oracleCondID, OUTCOMEWIN);
+        }
+
+        balance = await usdt.balanceOf(bettor.address);
+
+        await totoBetting.connect(bettor).withdrawPayout(betTokens.slice(0, nConditions));
+
+        for (let k = 0; k < nConditions; k++) {
+          if (betTokens[k].eq(winTokens[k])) {
+            bet = BigNumber.from(bets[k]);
+            reward = reward.add(bet.add(BigNumber.from(BET).mul(2)).mul(bet).div(bet.add(BET)));
+          }
+        }
+        reward = reward.mul(10 ** 9 - FEE).div(10 ** 9);
+        expect(await usdt.balanceOf(bettor.address)).to.be.equal(balance.add(reward));
+      }
+    });
     it("Get refund for canceled condition", async () => {
       let nBettors;
       let balances = [],
@@ -209,7 +271,7 @@ describe("TotoBetting test", function () {
 
         for (let k = 0; k < nBettors; k++) {
           outcome = k == 0 ? OUTCOMEWIN : k == 1 ? OUTCOMELOSE : Math.random() > 1 / 2 ? OUTCOMEWIN : OUTCOMELOSE;
-          bet = tokens(Math.floor(Math.random() * 100 + 1));
+          bet = randomTokens(2);
           bets[k] = bet;
           balances[k] = await usdt.balanceOf(bettors[k].address);
 
@@ -249,7 +311,7 @@ describe("TotoBetting test", function () {
         nBettors = Math.floor(Math.random() * (MAX_BETTORS - MIN_BETTORS + 1) + MIN_BETTORS);
 
         for (let k = 0; k < nBettors; k++) {
-          bet = tokens(Math.floor(Math.random() * 100 + 1));
+          bet = randomTokens(2);
           bets[k] = bet;
           balances[k] = await usdt.balanceOf(bettors[k].address);
 

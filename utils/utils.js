@@ -72,6 +72,16 @@ function tokens(val) {
   return BigNumber.from(val).mul(BigNumber.from("10").pow(18)).toString();
 }
 
+function randomTokens(power) {
+  power += 18;
+  let random =
+    Math.random().toString().slice(2, 18) +
+    Math.random()
+      .toString()
+      .slice(2, power - 14);
+  return BigNumber.from(random).add(1);
+}
+
 module.exports = {
   prepareStand,
   createCondition,
@@ -80,4 +90,5 @@ module.exports = {
   timeShift,
   timeout,
   tokens,
+  randomTokens,
 };
