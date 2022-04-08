@@ -333,6 +333,8 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
      * @notice Reward contract owner with total amount of charged fees
      */
     function claimDAOReward() external {
+        if (DAOReward == 0) revert ENoDAOReward();
+
         uint128 reward = DAOReward;
         DAOReward = 0;
         TransferHelper.safeTransfer(token, owner(), reward);

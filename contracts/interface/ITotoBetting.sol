@@ -71,4 +71,5 @@ interface ITotoBetting {
 
     error EAmountMustNotBeZero();
     error EZeroBalance(uint256 tokenID);
+    error ENoDAOReward(uint256 tokenID);
 }
