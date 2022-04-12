@@ -9,7 +9,7 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
 import "hardhat/console.sol";
 
-/// @title Azuro Totalizator main contract
+/// @title Azuro Totalizator
 contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     address public token;
 
@@ -17,7 +17,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     uint128 public DAOReward;
 
     /**
-     * @notice The condition expires if during this time before it starts there were no bets on one of the outcomes
+     * @notice The condition expires if during this time before it starts there were no bets on one of the outcomes.
      */
     uint64 public expireTimer;
 
@@ -30,7 +30,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     uint256 public lastConditionID; // starts with 1
 
     /**
-     * @notice Requires the function to be called only by oracle
+     * @notice Requires the function to be called only by oracle.
      */
     modifier onlyOracle() {
         if (!oracles[msg.sender]) revert EOnlyOracle();
@@ -61,7 +61,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     }
 
     /**
-     * @notice Indicate address `oracle_` as oracle
+     * @notice Indicate address `oracle_` as oracle.
      * @param  oracle_ new oracle address
      */
     function addOracle(address oracle_) external onlyOwner {
@@ -70,7 +70,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     }
 
     /**
-     * @notice Do not consider address `oracle_` a oracle anymore
+     * @notice Do not consider address `oracle_` a oracle anymore.
      * @param  oracle_ address of oracle to renounce
      */
     function renounceOracle(address oracle_) external onlyOwner {
@@ -79,7 +79,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     }
 
     /**
-     * @notice Oracle: Provide information about current condition
+     * @notice Oracle: Provide information about current condition.
      * @param  oracleConditionID_ the current match or game id in oracle's internal system
      * @param  outcomes_ outcome ids for this condition [outcome 1, outcome 2]
      * @param  scopeID_ id of the competition or event the condition belongs
@@ -113,7 +113,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     }
 
     /**
-     * @notice (Oracle) Indicate outcome `outcomeWon_` as happened in oracle's condition `oracleConditionID_`
+     * @notice Oracle: Indicate outcome `outcomeWon_` as happened in oracle's condition `oracleConditionID_`.
      * @param  oracleConditionID_ the match or game id in oracle's internal system
      * @param  outcomeWon_ id of happened outcome
      */
@@ -147,7 +147,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     }
 
     /**
-     * @notice Get condition with id `conditionID_`
+     * @notice Get condition with id `conditionID_`.
      * @param  conditionID_ the match or game id
      * @return the match or game struct
      */
@@ -164,7 +164,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     }
 
     /**
-     * @notice Require the condition have outcome `outcome_` as possible
+     * @notice Require the condition `conditionID` have outcome `outcome_` as possible.
      * @param  condition_ the match or game struct
      * @param  outcome_ outcome id
      */
@@ -179,7 +179,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     }
 
     /**
-     * @notice  Oracle: Indicate the condition `oracleConditionID_` as canceled
+     * @notice  Oracle: Indicate the condition `oracleConditionID_` as canceled.
      * @param   oracleConditionID_ the current match or game id in oracle's internal system
      */
     function cancelCondition(uint256 oracleConditionID_) external onlyOracle {
@@ -199,8 +199,8 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     }
 
     /**
-     * @notice Check if the condition `conditionID_` is canceled
-     * @dev    Previously cancel the condition if during `expireTime` sec before it starts there are no bets on one of the outcomes
+     * @notice Check if the condition `conditionID_` is canceled.
+     * @dev    Previously cancel the condition if during `expireTime` sec before it starts there are no bets on one of the outcomes.
      * @param  conditionID_ the match or game id
      * @return true if the condition is canceled else false
      */
@@ -224,8 +224,8 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     }
 
     /**
-     * @notice Bet `amount_` tokens that in the condition `conditionID_` will happen outcome with id `outcome_`
-     * @dev    Minted tokenID = 2 * `conditionID_` + index of outcome `outcome_` in condition struct
+     * @notice Bet `amount_` tokens that in the condition `conditionID_` will happen outcome with id `outcome_`.
+     * @dev    Minted tokenID = 2 * `conditionID_` + index of outcome `outcome_` in condition struct.
      * @param  conditionID_ the match or game id
      * @param  outcome_ id of predicted outcome
      * @param  amount_ bet amount in tokens
@@ -265,7 +265,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     }
 
     /**
-     * @notice Get token id of bet on outcome `outcome_` in condition `conditionID_`
+     * @notice Get token id of bet on outcome `outcome_` in condition `conditionID_`.
      * @param  conditionID_ the match or game id
      * @param  outcome_ id of predicted outcome
      * @return bet token id
@@ -283,7 +283,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     }
 
     /**
-     * @notice Withdraw payout based on bets in finished or cancelled conditions
+     * @notice Withdraw payout based on bets in finished or cancelled conditions.
      * @param  tokensIDs_ array of bet tokens ids withdraw payout to
      */
     function withdrawPayout(uint256[] calldata tokensIDs_) external {
@@ -330,7 +330,7 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     }
 
     /**
-     * @notice Reward contract owner with total amount of charged fees
+     * @notice Reward contract owner (DAO) with total amount of charged fees.
      */
     function claimDAOReward() external {
         if (DAOReward == 0) revert ENoDAOReward();
