@@ -2,9 +2,9 @@
 
 ## Documentation
 
-- [Developer](./docs/index.html)  
-- [Oracle](./docs/oracle/index.html)  
-- [Bettor](./docs/bettor/index.html)
+- [Developer](https://htmlpreview.github.io/?https://github.com/Azuro-protocol/TotoBetting/blob/main/docs/index.html#/)  
+- [Oracle](https://htmlpreview.github.io/?https://github.com/Azuro-protocol/TotoBetting/blob/main/docs/bettor/index.html#/contracts/TotoBetting.sol:TotoBetting)  
+- [Bettor](https://htmlpreview.github.io/?https://github.com/Azuro-protocol/TotoBetting/blob/main/docs/oracle/index.html#/contracts/TotoBetting.sol:TotoBetting)
 ## Usage
 ### Prerequisites
 1. Install hardhat locally in the project folder:
