@@ -7,10 +7,8 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
-import "hardhat/console.sol";
-
 /// @title Azuro Totalizator
-contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
+contract TotoBetting is OwnableUpgradeable, ERC1155Upgradeable, ITotoBetting {
     address public token;
 
     uint128 public daoFee;
