@@ -13,7 +13,7 @@ import "hardhat/console.sol";
 contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     address public token;
 
-    uint128 public DAOFee;
+    uint128 public daoFee;
     uint128 public DAOReward;
 
     /**
@@ -21,13 +21,13 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
      */
     uint64 public expireTimer;
 
-    uint128 public denominator;
+    uint32 public multiplier;
 
     mapping(address => bool) public oracles;
-    mapping(address => mapping(uint256 => uint256)) public oracleConditionIDs; // oracle -> oracleConditionID -> conditionID
+    mapping(address => mapping(uint256 => uint256)) public oracleConditionIds; // oracle -> oracleConditionId -> conditionId
 
     mapping(uint256 => Condition) public conditions;
-    uint256 public lastConditionID; // starts with 1
+    uint256 public lastConditionId; // starts with 1
 
     /**
      * @notice Requires the function to be called only by oracle.
@@ -39,184 +39,177 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
 
     /**
      * @param  token_ address of the token used in bets and rewards
-     * @param  oracle_ oracle address
-     * @param  fee_ bet fee in decimals 10^9
+     * @param  oracle oracle address
+     * @param  fee bet fee in decimals 10^9
      */
     function initialize(
         address token_,
-        address oracle_,
-        uint128 fee_
+        address oracle,
+        uint128 fee
     ) external virtual initializer {
         if (token_ == address(0)) revert EWrongToken();
 
         __Ownable_init();
         __ERC1155_init("Toto Betting");
-        denominator = 10**9;
+        multiplier = 10**9;
 
-        if (fee_ >= denominator) revert EWrongFee();
+        if (fee >= multiplier) revert EWrongFee();
         token = token_;
-        oracles[oracle_] = true;
+        oracles[oracle] = true;
         expireTimer = 600;
-        DAOFee = fee_;
+        daoFee = fee;
     }
 
     /**
-     * @notice Indicate address `oracle_` as oracle.
-     * @param  oracle_ new oracle address
+     * @notice Indicate address `oracle` as oracle.
+     * @param  oracle new oracle address
      */
-    function addOracle(address oracle_) external onlyOwner {
-        oracles[oracle_] = true;
-        emit OracleAdded(oracle_);
+    function addOracle(address oracle) external onlyOwner {
+        oracles[oracle] = true;
+        emit OracleAdded(oracle);
     }
 
     /**
-     * @notice Do not consider address `oracle_` a oracle anymore.
-     * @param  oracle_ address of oracle to renounce
+     * @notice Do not consider address `oracle` a oracle anymore.
+     * @param  oracle address of oracle to renounce
      */
-    function renounceOracle(address oracle_) external onlyOwner {
-        oracles[oracle_] = false;
-        emit OracleRenounced(oracle_);
+    function renounceOracle(address oracle) external onlyOwner {
+        oracles[oracle] = false;
+        emit OracleRenounced(oracle);
     }
 
     /**
      * @notice Oracle: Provide information about current condition.
-     * @param  oracleConditionID_ the current match or game id in oracle's internal system
-     * @param  outcomes_ outcome ids for this condition [outcome 1, outcome 2]
-     * @param  scopeID_ id of the competition or event the condition belongs
-     * @param  timestamp_ time when match starts and bets not allowed
-     * @param  ipfsHash_ detailed info about match stored in IPFS
+     * @param  oracleCondId the current match or game id in oracle's internal system
+     * @param  outcomes outcome ids for this condition [outcome 1, outcome 2]
+     * @param  scopeId id of the competition or event the condition belongs
+     * @param  timestamp time when match starts and bets not allowed
+     * @param  ipfsHash detailed info about match stored in IPFS
      */
     function createCondition(
-        uint256 oracleConditionID_,
-        uint128 scopeID_,
-        uint64[2] calldata outcomes_,
-        uint64 timestamp_,
-        bytes32 ipfsHash_
+        uint256 oracleCondId,
+        uint128 scopeId,
+        uint64[2] calldata outcomes,
+        uint64 timestamp,
+        bytes32 ipfsHash
     ) external onlyOracle {
-        uint256 conditionID = oracleConditionIDs[msg.sender][
-            oracleConditionID_
-        ];
-        if (conditionID != 0) revert EConditionAlreadyCreated(conditionID);
-        if (outcomes_[0] == outcomes_[1]) revert ESameOutcomes();
-        if (timestamp_ <= block.timestamp + expireTimer)
+        uint256 conditionId = oracleConditionIds[msg.sender][oracleCondId];
+        if (conditionId != 0) revert EConditionAlreadyCreated(conditionId);
+        if (outcomes[0] == outcomes[1]) revert ESameOutcomes();
+        if (timestamp <= block.timestamp + expireTimer)
             revert EConditionExpired();
 
-        oracleConditionIDs[msg.sender][oracleConditionID_] = ++lastConditionID;
+        oracleConditionIds[msg.sender][oracleCondId] = ++lastConditionId;
 
-        Condition storage newCondition = conditions[lastConditionID];
-        newCondition.outcomes = outcomes_;
-        newCondition.scopeID = scopeID_;
-        newCondition.timestamp = timestamp_;
-        newCondition.ipfsHash = ipfsHash_;
+        Condition storage newCondition = conditions[lastConditionId];
+        newCondition.outcomes = outcomes;
+        newCondition.scopeId = scopeId;
+        newCondition.timestamp = timestamp;
+        newCondition.ipfsHash = ipfsHash;
 
-        emit ConditionCreated(oracleConditionID_, lastConditionID, timestamp_);
+        emit ConditionCreated(oracleCondId, lastConditionId, timestamp);
     }
 
     /**
-     * @notice Oracle: Indicate outcome `outcomeWon_` as happened in oracle's condition `oracleConditionID_`.
-     * @param  oracleConditionID_ the match or game id in oracle's internal system
-     * @param  outcomeWon_ id of happened outcome
+     * @notice Oracle: Indicate outcome `outcomeWon` as happened in oracle's condition `oracleCondId`.
+     * @param  oracleCondId the match or game id in oracle's internal system
+     * @param  outcomeWon id of happened outcome
      */
-    function resolveCondition(uint256 oracleConditionID_, uint64 outcomeWon_)
+    function resolveCondition(uint256 oracleCondId, uint64 outcomeWon)
         external
         onlyOracle
     {
-        uint256 conditionID = oracleConditionIDs[msg.sender][
-            oracleConditionID_
-        ];
+        uint256 conditionId = oracleConditionIds[msg.sender][oracleCondId];
 
-        Condition storage condition = getCondition(conditionID);
+        Condition storage condition = getCondition(conditionId);
 
-        if (conditionIsCanceled(conditionID))
-            revert EConditionCanceled(conditionID);
-        if (condition.state != conditionState.CREATED)
-            revert EConditionAlreadyResolved(conditionID);
+        if (conditionIsCanceled(conditionId))
+            revert EConditionCanceled(conditionId);
+        if (condition.state != ConditionState.CREATED)
+            revert EConditionAlreadyResolved(conditionId);
         if (block.timestamp < condition.timestamp)
-            revert EConditionNotYetStarted(conditionID);
+            revert EConditionNotYetStarted(conditionId);
 
-        outcomeIsCorrect(condition, outcomeWon_);
+        outcomeIsCorrect(condition, outcomeWon);
 
         DAOReward +=
-            ((condition.totalNetBets[0] + condition.totalNetBets[1]) * DAOFee) /
-            denominator;
+            ((condition.totalNetBets[0] + condition.totalNetBets[1]) * daoFee) /
+            multiplier;
 
-        condition.outcomeWon = outcomeWon_;
-        condition.state = conditionState.RESOLVED;
+        condition.outcomeWon = outcomeWon;
+        condition.state = ConditionState.RESOLVED;
 
-        emit ConditionResolved(oracleConditionID_, conditionID, outcomeWon_);
+        emit ConditionResolved(oracleCondId, conditionId, outcomeWon);
     }
 
     /**
-     * @notice Get condition with id `conditionID_`.
-     * @param  conditionID_ the match or game id
+     * @notice Get condition with id `conditionId`.
+     * @param  conditionId the match or game id
      * @return the match or game struct
      */
-    function getCondition(uint256 conditionID_)
+    function getCondition(uint256 conditionId)
         internal
         view
         returns (Condition storage)
     {
-        Condition storage condition = conditions[conditionID_];
+        Condition storage condition = conditions[conditionId];
 
-        if (condition.timestamp == 0) revert EConditionNotExists(conditionID_);
+        if (condition.timestamp == 0) revert EConditionNotExists(conditionId);
 
         return condition;
     }
 
     /**
-     * @notice Require the condition `conditionID` have outcome `outcome_` as possible.
-     * @param  condition_ the match or game struct
-     * @param  outcome_ outcome id
+     * @notice Require the condition `conditionId` have outcome `outcome` as possible.
+     * @param  condition the match or game struct
+     * @param  outcome outcome id
      */
-    function outcomeIsCorrect(Condition memory condition_, uint64 outcome_)
+    function outcomeIsCorrect(Condition memory condition, uint64 outcome)
         internal
         pure
     {
         if (
-            outcome_ != condition_.outcomes[0] &&
-            outcome_ != condition_.outcomes[1]
+            outcome != condition.outcomes[0] && outcome != condition.outcomes[1]
         ) revert EWrongOutcome();
     }
 
     /**
-     * @notice  Oracle: Indicate the condition `oracleConditionID_` as canceled.
-     * @param   oracleConditionID_ the current match or game id in oracle's internal system
+     * @notice  Oracle: Indicate the condition `oracleCondId` as canceled.
+     * @param   oracleCondId the current match or game id in oracle's internal system
      */
-    function cancelCondition(uint256 oracleConditionID_) external onlyOracle {
-        uint256 conditionID = oracleConditionIDs[msg.sender][
-            oracleConditionID_
-        ];
-        Condition storage condition = getCondition(conditionID);
+    function cancelCondition(uint256 oracleCondId) external onlyOracle {
+        uint256 conditionId = oracleConditionIds[msg.sender][oracleCondId];
+        Condition storage condition = getCondition(conditionId);
 
-        if (condition.state == conditionState.RESOLVED)
-            revert EConditionResolved(conditionID);
-        if (condition.state == conditionState.CANCELED)
-            revert EConditionAlreadyCanceled(conditionID);
+        if (condition.state == ConditionState.RESOLVED)
+            revert EConditionResolved(conditionId);
+        if (condition.state == ConditionState.CANCELED)
+            revert EConditionAlreadyCanceled(conditionId);
 
-        condition.state = conditionState.CANCELED;
+        condition.state = ConditionState.CANCELED;
 
-        emit ConditionCanceled(oracleConditionID_, conditionID);
+        emit ConditionCanceled(oracleCondId, conditionId);
     }
 
     /**
-     * @notice Check if the condition `conditionID_` is canceled.
+     * @notice Check if the condition `conditionId` is canceled.
      * @dev    Previously cancel the condition if during `expireTime` sec before it starts there are no bets on one of the outcomes.
-     * @param  conditionID_ the match or game id
+     * @param  conditionId the match or game id
      * @return true if the condition is canceled else false
      */
-    function conditionIsCanceled(uint256 conditionID_) internal returns (bool) {
-        Condition storage condition = getCondition(conditionID_);
+    function conditionIsCanceled(uint256 conditionId) internal returns (bool) {
+        Condition storage condition = getCondition(conditionId);
 
-        if (condition.state == conditionState.CANCELED) {
+        if (condition.state == ConditionState.CANCELED) {
             return true;
         }
         if (
             (block.timestamp + expireTimer >= condition.timestamp) &&
             (condition.totalNetBets[0] == 0 || condition.totalNetBets[1] == 0)
         ) {
-            condition.state = conditionState.CANCELED;
+            condition.state = ConditionState.CANCELED;
 
-            emit ConditionCanceled(0, conditionID_);
+            emit ConditionCanceled(0, conditionId);
 
             return true;
         }
@@ -224,89 +217,89 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
     }
 
     /**
-     * @notice Bet `amount_` tokens that in the condition `conditionID_` will happen outcome with id `outcome_`.
-     * @dev    Minted tokenID = 2 * `conditionID_` + index of outcome `outcome_` in condition struct.
-     * @param  conditionID_ the match or game id
-     * @param  outcome_ id of predicted outcome
-     * @param  amount_ bet amount in tokens
+     * @notice Bet `amount` tokens that in the condition `conditionId` will happen outcome with id `outcome`.
+     * @dev    Minted tokenId = 2 * `conditionId` + index of outcome `outcome` in condition struct.
+     * @param  conditionId the match or game id
+     * @param  outcome id of predicted outcome
+     * @param  amount bet amount in tokens
      */
     function makeBet(
-        uint256 conditionID_,
-        uint64 outcome_,
-        uint128 amount_
+        uint256 conditionId,
+        uint64 outcome,
+        uint128 amount
     ) external {
-        if (amount_ == 0) revert EAmountMustNotBeZero();
+        if (amount == 0) revert EAmountMustNotBeZero();
 
-        Condition storage condition = getCondition(conditionID_);
+        Condition storage condition = getCondition(conditionId);
 
-        if (conditionIsCanceled(conditionID_))
-            revert EConditionCanceled(conditionID_);
+        if (conditionIsCanceled(conditionId))
+            revert EConditionCanceled(conditionId);
         if (block.timestamp >= condition.timestamp)
-            revert EConditionStarted(conditionID_);
+            revert EConditionStarted(conditionId);
 
-        outcomeIsCorrect(condition, outcome_);
+        outcomeIsCorrect(condition, outcome);
 
-        uint256 tokenID = conditionID_ *
+        uint256 tokenId = conditionId *
             2 -
-            (outcome_ == condition.outcomes[0] ? 1 : 0);
+            (outcome == condition.outcomes[0] ? 1 : 0);
 
-        condition.totalNetBets[(tokenID + 1) % 2] += amount_;
+        condition.totalNetBets[(tokenId + 1) % 2] += amount;
 
-        super._mint(msg.sender, tokenID, amount_, "");
+        super._mint(msg.sender, tokenId, amount, "");
 
         TransferHelper.safeTransferFrom(
             token,
             msg.sender,
             address(this),
-            amount_
+            amount
         );
 
-        emit NewBet(msg.sender, tokenID, conditionID_, outcome_, amount_);
+        emit NewBet(msg.sender, tokenId, conditionId, outcome, amount);
     }
 
     /**
-     * @notice Get token id of bet on outcome `outcome_` in condition `conditionID_`.
-     * @param  conditionID_ the match or game id
-     * @param  outcome_ id of predicted outcome
+     * @notice Get token id of bet on outcome `outcome` in condition `conditionId`.
+     * @param  conditionId the match or game id
+     * @param  outcome id of predicted outcome
      * @return bet token id
      */
-    function getTokenID(uint256 conditionID_, uint64 outcome_)
+    function getTokenId(uint256 conditionId, uint64 outcome)
         public
         view
         returns (uint256)
     {
-        Condition memory condition = getCondition(conditionID_);
+        Condition memory condition = getCondition(conditionId);
 
-        outcomeIsCorrect(condition, outcome_);
+        outcomeIsCorrect(condition, outcome);
 
-        return conditionID_ * 2 - (outcome_ == condition.outcomes[0] ? 1 : 0);
+        return conditionId * 2 - (outcome == condition.outcomes[0] ? 1 : 0);
     }
 
     /**
      * @notice Withdraw payout based on bets in finished or cancelled conditions.
-     * @param  tokensIDs_ array of bet tokens ids withdraw payout to
+     * @param  tokenIds array of bet tokens ids withdraw payout to
      */
-    function withdrawPayout(uint256[] calldata tokensIDs_) external {
+    function withdrawPayout(uint256[] calldata tokenIds) external {
         uint256 totalPayout;
         uint256 refunds;
-        for (uint256 i = 0; i < tokensIDs_.length; i++) {
-            uint256 tokenID = tokensIDs_[i];
-            uint256 balance = super.balanceOf(msg.sender, tokenID);
+        for (uint256 i = 0; i < tokenIds.length; ++i) {
+            uint256 tokenId = tokenIds[i];
+            uint256 balance = super.balanceOf(msg.sender, tokenId);
 
-            if (balance == 0) revert EZeroBalance(tokenID);
+            if (balance == 0) revert EZeroBalance(tokenId);
 
-            uint256 conditionID = (tokenID + 1) / 2;
-            Condition memory condition = getCondition(conditionID);
+            uint256 conditionId = (tokenId + 1) / 2;
+            Condition memory condition = getCondition(conditionId);
 
             if (
-                condition.state != conditionState.RESOLVED &&
-                !conditionIsCanceled(conditionID)
-            ) revert EConditionStillOn(conditionID);
+                condition.state != ConditionState.RESOLVED &&
+                !conditionIsCanceled(conditionId)
+            ) revert EConditionStillOn(conditionId);
 
-            super._burn(msg.sender, tokenID, balance);
+            super._burn(msg.sender, tokenId, balance);
 
-            uint256 outcomeWinIndex = (tokenID + 1) % 2; // uint256 used to reduce gas consumption
-            if (condition.state == conditionState.RESOLVED) {
+            uint256 outcomeWinIndex = (tokenId + 1) % 2; // uint256 used to reduce gas consumption
+            if (condition.state == ConditionState.RESOLVED) {
                 if (
                     condition.outcomes[outcomeWinIndex] == condition.outcomeWon
                 ) {
@@ -320,13 +313,13 @@ contract TotoBetting is ERC1155Upgradeable, OwnableUpgradeable, ITotoBetting {
             }
         }
         totalPayout =
-            (totalPayout * (denominator - DAOFee)) /
-            denominator +
+            (totalPayout * (multiplier - daoFee)) /
+            multiplier +
             refunds;
 
         TransferHelper.safeTransfer(token, msg.sender, totalPayout);
 
-        emit BettorWin(msg.sender, tokensIDs_, totalPayout);
+        emit BettorWin(msg.sender, tokenIds, totalPayout);
     }
 
     /**

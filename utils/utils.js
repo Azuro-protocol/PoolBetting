@@ -22,30 +22,30 @@ const prepareStand = async (ethers, owner, oracle, oracle2, fee) => {
   return [totoBetting, usdt];
 };
 
-const createCondition = async (totoBetting, oracle, oracleCondID_, scopeID, outcomes, timestamp, ipfsHash) => {
+const createCondition = async (totoBetting, oracle, oracleCondId_, scopeId, outcomes, timestamp, ipfsHash) => {
   const txCreate = await totoBetting
     .connect(oracle)
-    .createCondition(oracleCondID_, scopeID, outcomes, timestamp, ethers.utils.formatBytes32String(ipfsHash));
-  const conditionIDHash = await getConditionID_Hash(txCreate);
+    .createCondition(oracleCondId_, scopeId, outcomes, timestamp, ethers.utils.formatBytes32String(ipfsHash));
+  const conditionIdHash = await getConditionId_Hash(txCreate);
 
-  return conditionIDHash;
+  return conditionIdHash;
 };
 
-const getConditionID_Hash = async (txCreateCondition) => {
+const getConditionId_Hash = async (txCreateCondition) => {
   const eCondition = (await txCreateCondition.wait()).events.filter((x) => {
     return x.event == "ConditionCreated";
   });
-  return eCondition[0].args.conditionID.toString();
+  return eCondition[0].args.conditionId.toString();
 };
 
-const makeBet = async (totoBetting, bettor, conditionIDHash, outcome, amount) => {
-  let txBet = await totoBetting.connect(bettor).makeBet(conditionIDHash, outcome, amount);
-  let betTokenID = await getTokenID(txBet);
+const makeBet = async (totoBetting, bettor, conditionIdHash, outcome, amount) => {
+  let txBet = await totoBetting.connect(bettor).makeBet(conditionIdHash, outcome, amount);
+  let betTokenId = await getTokenId(txBet);
 
-  return betTokenID;
+  return betTokenId;
 };
 
-const getTokenID = async (txBet) => {
+const getTokenId = async (txBet) => {
   let eBet = (await txBet.wait()).events.filter((x) => {
     return x.event == "NewBet";
   });

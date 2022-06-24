@@ -3,7 +3,7 @@
 pragma solidity ^0.8.4;
 
 interface ITotoBetting {
-    enum conditionState {
+    enum ConditionState {
         CREATED,
         RESOLVED,
         CANCELED
@@ -12,42 +12,42 @@ interface ITotoBetting {
     struct Condition {
         uint128[2] totalNetBets;
         uint64[2] outcomes;
-        uint128 scopeID;
+        uint128 scopeId;
         bytes32 ipfsHash;
         uint64 outcomeWon;
         uint64 timestamp;
-        conditionState state;
+        ConditionState state;
     }
 
     event OracleAdded(address indexed newOracle);
     event OracleRenounced(address indexed oracle);
 
     event ConditionCreated(
-        uint256 indexed oracleConditionID,
-        uint256 indexed conditionID,
+        uint256 indexed oracleConditionId,
+        uint256 indexed conditionId,
         uint64 timestamp
     );
     event ConditionResolved(
-        uint256 indexed oracleConditionID,
-        uint256 indexed conditionID,
+        uint256 indexed oracleConditionId,
+        uint256 indexed conditionId,
         uint64 outcomeWin
     );
     event ConditionCanceled(
-        uint256 indexed oracleConditionID,
-        uint256 indexed conditionID
+        uint256 indexed oracleConditionId,
+        uint256 indexed conditionId
     );
 
     event NewBet(
         address indexed owner,
         uint256 indexed tokenId,
-        uint256 indexed conditionID,
+        uint256 indexed conditionId,
         uint64 outcome,
         uint128 amount
     );
 
     event BettorWin(
         address indexed bettor,
-        uint256[] indexed tokensIDs,
+        uint256[] indexed tokensIds,
         uint256 amount
     );
     // Some errors have same names as events or modifiers so used "E" prefix
@@ -59,17 +59,17 @@ interface ITotoBetting {
     error ESameOutcomes();
     error EConditionExpired();
 
-    error EConditionNotExists(uint256 conditionID);
-    error EConditionAlreadyCreated(uint256 conditionID);
-    error EConditionNotYetStarted(uint256 conditionID);
-    error EConditionStillOn(uint256 conditionID);
-    error EConditionStarted(uint256 conditionID);
-    error EConditionResolved(uint256 conditionID);
-    error EConditionAlreadyResolved(uint256 conditionID);
-    error EConditionCanceled(uint256 conditionID);
-    error EConditionAlreadyCanceled(uint256 conditionID);
+    error EConditionNotExists(uint256 conditionId);
+    error EConditionAlreadyCreated(uint256 conditionId);
+    error EConditionNotYetStarted(uint256 conditionId);
+    error EConditionStillOn(uint256 conditionId);
+    error EConditionStarted(uint256 conditionId);
+    error EConditionResolved(uint256 conditionId);
+    error EConditionAlreadyResolved(uint256 conditionId);
+    error EConditionCanceled(uint256 conditionId);
+    error EConditionAlreadyCanceled(uint256 conditionId);
 
     error EAmountMustNotBeZero();
-    error EZeroBalance(uint256 tokenID);
+    error EZeroBalance(uint256 tokenId);
     error ENoDAOReward();
 }
