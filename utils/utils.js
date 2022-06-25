@@ -1,25 +1,25 @@
 const { BigNumber } = require("@ethersproject/bignumber");
+const { ethers } = require("hardhat");
 
 const prepareStand = async (ethers, owner, oracle, oracle2, fee) => {
-  const mintableAmount = tokens(10 ** 9);
-  // test USDT
-  Usdt = await ethers.getContractFactory("TestERC20");
-  usdt = await Usdt.deploy();
-  await usdt.deployed();
-  await usdt.mint(owner.address, mintableAmount);
+  // test wxDai
+  WXDAI = await ethers.getContractFactory("WETH9");
+  wxDAI = await WXDAI.deploy();
+  await wxDAI.deployed();
+  await owner.sendTransaction({ to: wxDAI.address, value: ethers.utils.parseEther("10000000") });
 
   // toto betting core
   TotoBetting = await ethers.getContractFactory("TotoBetting");
-  totoBetting = await upgrades.deployProxy(TotoBetting, [usdt.address, oracle.address, fee]);
+  totoBetting = await upgrades.deployProxy(TotoBetting, [wxDAI.address, oracle.address, fee]);
   await totoBetting.deployed();
 
   // setting up
   await totoBetting.connect(owner).addOracle(oracle2.address);
 
   const approveAmount = tokens(10 ** 9);
-  await usdt.approve(totoBetting.address, approveAmount);
+  await wxDAI.approve(totoBetting.address, approveAmount);
 
-  return [totoBetting, usdt];
+  return [totoBetting, wxDAI];
 };
 
 const createCondition = async (totoBetting, oracle, oracleCondId_, scopeId, outcomes, timestamp, ipfsHash) => {

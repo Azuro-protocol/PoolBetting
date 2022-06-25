@@ -21,7 +21,9 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 });
 
 const exportNetworks = {
-  hardhat: {},
+  hardhat:  {accounts: {
+  accountsBalance: "1000000000000000000000000000"
+}},
   ganache: {
     url: "http://127.0.0.1:8545",
     gasLimit: 6000000000,

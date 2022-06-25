@@ -5,6 +5,8 @@ const {
   prepareStand,
   createCondition,
   makeBet,
+  makeBetNative,
+  getUsedGas,
   getBlockTime,
   timeShift,
   tokens,
@@ -15,7 +17,6 @@ const ORACLE_CONDITION_START = 1000000;
 const SCOPE_ID = 1;
 const FEE = 10 ** 6; // in decimals 10^9
 const IPFS = "dummy";
-const BALANCE = tokens(10 ** 9);
 const BET = tokens(100);
 const ONE_HOUR = 3600;
 const OUTCOMEWIN = 1;
@@ -26,16 +27,16 @@ const TRIES = 5;
 const MIN_BETTORS = 3; // >= 2
 const MAX_BETTORS = 16;
 
-const prepareBettors = async (totoBetting, usdt, n) => {
+const prepareBettors = async (totoBetting, wxDAI, n) => {
   let bettors = [],
     bettor;
   [donor] = await ethers.getSigners();
   for (let k = 0; k < n; k++) {
     bettor = await ethers.Wallet.createRandom();
     bettor = bettor.connect(ethers.provider);
-    await usdt.mint(bettor.address, BALANCE);
-    await donor.sendTransaction({ to: bettor.address, value: ethers.utils.parseEther("1") });
-    await usdt.connect(bettor).approve(totoBetting.address, BALANCE);
+    await donor.sendTransaction({ to: bettor.address, value: ethers.utils.parseEther("10000000") });
+    await bettor.sendTransaction({ to: wxDAI.address, value: tokens(5000000) });
+    await wxDAI.connect(bettor).approve(totoBetting.address, tokens(10000000));
     bettors.push(bettor);
   }
   return bettors;
@@ -43,7 +44,7 @@ const prepareBettors = async (totoBetting, usdt, n) => {
 
 describe("TotoBetting test", function () {
   let owner, oracle, oracle2, bettors, bettor, bettor2;
-  let totoBetting, usdt;
+  let totoBetting, wxDAI;
   let time, condIdHash;
 
   let oracleCondId = ORACLE_CONDITION_START;
@@ -51,9 +52,9 @@ describe("TotoBetting test", function () {
   before(async () => {
     [owner, oracle, oracle2, addr1] = await ethers.getSigners();
 
-    [totoBetting, usdt] = await prepareStand(ethers, owner, oracle, oracle2, FEE);
+    [totoBetting, wxDAI] = await prepareStand(ethers, owner, oracle, oracle2, FEE);
 
-    bettors = await prepareBettors(totoBetting, usdt, MAX_BETTORS);
+    bettors = await prepareBettors(totoBetting, wxDAI, MAX_BETTORS);
     bettor = bettors[0];
     bettor2 = bettors[1];
   });
@@ -112,11 +113,11 @@ describe("TotoBetting test", function () {
 
         for (let k = 0; k < nBettors; k++) {
           bettor = bettors[k];
-          balance = await usdt.balanceOf(bettor.address);
+          balance = await wxDAI.balanceOf(bettor.address);
           betToken = betTokens[k];
           await totoBetting.connect(bettor).withdrawPayout([betToken]);
           if (betToken.eq(betTokens[0])) {
-            expect(await usdt.balanceOf(bettor.address)).to.be.equal(
+            expect(await wxDAI.balanceOf(bettor.address)).to.be.equal(
               balance.add(
                 totalNetBets
                   .mul(bets[k])
@@ -126,7 +127,7 @@ describe("TotoBetting test", function () {
               )
             );
           } else {
-            expect(await usdt.balanceOf(bettor.address)).to.be.equal(balance);
+            expect(await wxDAI.balanceOf(bettor.address)).to.be.equal(balance);
           }
         }
       }
@@ -174,11 +175,11 @@ describe("TotoBetting test", function () {
 
         for (let k = 0; k < nBettors; k++) {
           bettor = bettors[k];
-          balance = await usdt.balanceOf(bettor.address);
+          balance = await wxDAI.balanceOf(bettor.address);
           betToken = betTokens[k];
           await totoBetting.connect(bettor).withdrawPayout([betToken]);
           if (betToken.eq(betTokens[0])) {
-            expect(await usdt.balanceOf(bettor.address)).to.be.equal(
+            expect(await wxDAI.balanceOf(bettor.address)).to.be.equal(
               balance.add(
                 totalNetBets
                   .mul(bets[k])
@@ -188,7 +189,7 @@ describe("TotoBetting test", function () {
               )
             );
           } else {
-            expect(await usdt.balanceOf(bettor.address)).to.be.equal(balance);
+            expect(await wxDAI.balanceOf(bettor.address)).to.be.equal(balance);
           }
         }
       }
@@ -233,7 +234,7 @@ describe("TotoBetting test", function () {
           await totoBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN);
         }
 
-        balance = await usdt.balanceOf(bettor.address);
+        balance = await wxDAI.balanceOf(bettor.address);
 
         await totoBetting.connect(bettor).withdrawPayout(betTokens.slice(0, nConditions));
 
@@ -244,7 +245,7 @@ describe("TotoBetting test", function () {
           }
         }
         reward = reward.mul(10 ** 9 - FEE).div(10 ** 9);
-        expect(await usdt.balanceOf(bettor.address)).to.be.equal(balance.add(reward));
+        expect(await wxDAI.balanceOf(bettor.address)).to.be.equal(balance.add(reward));
       }
     });
     it("Get refund for canceled condition", async () => {
@@ -273,7 +274,7 @@ describe("TotoBetting test", function () {
           outcome = k == 0 ? OUTCOMEWIN : k == 1 ? OUTCOMELOSE : Math.random() > 1 / 2 ? OUTCOMEWIN : OUTCOMELOSE;
           bet = randomTokens(2);
           bets[k] = bet;
-          balances[k] = await usdt.balanceOf(bettors[k].address);
+          balances[k] = await wxDAI.balanceOf(bettors[k].address);
 
           betTokens[k] = await makeBet(totoBetting, bettors[k], condIdHash, outcome, bet);
         }
@@ -283,7 +284,7 @@ describe("TotoBetting test", function () {
         for (let k = 0; k < nBettors; k++) {
           await totoBetting.connect(bettors[k]).withdrawPayout([betTokens[k]]);
 
-          expect(await usdt.balanceOf(bettors[k].address)).to.be.equal(balances[k]);
+          expect(await wxDAI.balanceOf(bettors[k].address)).to.be.equal(balances[k]);
         }
       }
     });
@@ -313,7 +314,7 @@ describe("TotoBetting test", function () {
         for (let k = 0; k < nBettors; k++) {
           bet = randomTokens(2);
           bets[k] = bet;
-          balances[k] = await usdt.balanceOf(bettors[k].address);
+          balances[k] = await wxDAI.balanceOf(bettors[k].address);
 
           betToken = await makeBet(totoBetting, bettors[k], condIdHash, outcome, bet);
         }
@@ -323,7 +324,7 @@ describe("TotoBetting test", function () {
         for (let k = 0; k < nBettors; k++) {
           await totoBetting.connect(bettors[k]).withdrawPayout([betToken]);
 
-          expect(await usdt.balanceOf(bettors[k].address)).to.be.equal(balances[k]);
+          expect(await wxDAI.balanceOf(bettors[k].address)).to.be.equal(balances[k]);
         }
       }
     });
@@ -331,7 +332,7 @@ describe("TotoBetting test", function () {
   describe("DAO", async function () {
     it("Withdraw DAO reward", async () => {
       await totoBetting.connect(owner).claimDAOReward();
-      const balance = await usdt.balanceOf(owner.address);
+      const balance = await wxDAI.balanceOf(owner.address);
 
       oracleCondId++;
       let time = await getBlockTime(ethers);
@@ -376,7 +377,7 @@ describe("TotoBetting test", function () {
 
       await totoBetting.connect(owner).claimDAOReward();
 
-      expect(await usdt.balanceOf(owner.address)).to.be.equal(
+      expect(await wxDAI.balanceOf(owner.address)).to.be.equal(
         balance.add(
           BigNumber.from(tokens(300))
             .mul(FEE)
@@ -635,7 +636,7 @@ describe("TotoBetting test", function () {
         );
       });
       it("Should NOT bet with insufficient balance", async () => {
-        const balance = await usdt.balanceOf(bettor.address);
+        const balance = await wxDAI.balanceOf(bettor.address);
         await expect(makeBet(totoBetting, addr1, condIdHash, OUTCOMEWIN, balance.add(1))).to.be.revertedWith(
           "transferFrom failed"
         );
@@ -659,13 +660,13 @@ describe("TotoBetting test", function () {
       it("Should NOT reward in case of lose", async () => {
         tokenWin = await makeBet(totoBetting, bettor, condIdHash, OUTCOMELOSE, BET);
         await makeBet(totoBetting, bettor2, condIdHash, OUTCOMEWIN, BET);
-        balance = await usdt.balanceOf(bettor.address);
+        balance = await wxDAI.balanceOf(bettor.address);
 
         timeShift(time + ONE_HOUR);
         totoBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN);
 
         await totoBetting.connect(bettor).withdrawPayout([tokenWin]);
-        expect(await usdt.balanceOf(bettor.address)).to.be.equal(balance);
+        expect(await wxDAI.balanceOf(bettor.address)).to.be.equal(balance);
       });
       it("Should NOT reward before condition ends", async () => {
         tokenWin = await makeBet(totoBetting, bettor, condIdHash, OUTCOMEWIN, BET);

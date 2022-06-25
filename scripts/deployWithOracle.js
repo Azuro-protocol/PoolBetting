@@ -23,7 +23,7 @@ async function main() {
   const oracle = deployer;
 
   let oracleCondID = 0;
-  let usdt, totoBetting, totoBettingImpl;
+  let wxDAI, totoBetting, totoBettingImpl, testWallet;
 
   console.log("Deployer wallet: ", deployer.address);
   console.log("Deployer balance:", (await deployer.getBalance()).toString());
@@ -36,26 +36,27 @@ async function main() {
   // sokol => 5000 (0x4D)
   const TIME_OUT = chainId == 0x7a69 ? 800 : chainId == 0x2a ? 8000 : chainId == 0x4d ? 5000 : 20000;
 
-  // USDT
+  // WXDAI
   {
-    const Usdt = await ethers.getContractFactory("TestERC20");
-    usdt = await Usdt.deploy();
-    await usdt.deployed();
+    const WXDAI = await ethers.getContractFactory("WETH9");
+    wxDAI = await WXDAI.deploy();
+    await wxDAI.deployed();
     await timeout(TIME_OUT);
-    console.log("USDT deployed to:", usdt.address);
-    await usdt.mint(deployer.address, tokens(800_000_000));
+    console.log("wxDAI deployed to:", wxDAI.address);
+    await deployer.sendTransaction({ to: wxDAI.address, value: tokens(800_000_000) });
     await timeout(TIME_OUT);
   }
 
   // TotoBetting
   {
     const TotoBetting = await ethers.getContractFactory("TotoBetting");
-    totoBetting = await upgrades.deployProxy(TotoBetting, [usdt.address, oracle.address, FEE]);
+    totoBetting = await upgrades.deployProxy(TotoBetting, [wxDAI.address, oracle.address, FEE]);
     console.log("TotoBetting proxy deployed to:", totoBetting.address);
     await timeout(TIME_OUT);
     await totoBetting.deployed();
     await timeout(TIME_OUT);
     totoBettingImpl = await upgrades.erc1967.getImplementationAddress(totoBetting.address);
+    await totoBettingImpl.initialize();
     console.log("TotoBetting deployed to:", totoBettingImpl);
     console.log();
   }
@@ -63,7 +64,7 @@ async function main() {
   // settings
   {
     const approveAmount = tokens(999_999_999);
-    await usdt.approve(totoBetting.address, approveAmount);
+    await wxDAI.approve(totoBetting.address, approveAmount);
     await timeout(TIME_OUT);
     console.log("Approve done", approveAmount.toString());
     console.log();
@@ -88,9 +89,11 @@ async function main() {
     console.log();
 
     for (const iterator of Array(3).keys()) {
-      await usdt.transfer(TEST_WALLET[iterator], tokens(10_000_000));
+      testWallet = TEST_WALLET[iterator];
+      await wxDAI.connect(deployer).approve(testWallet, tokens(10_000_000));
+      await deployer.connect(wxDAI).transfer(testWallet, tokens(10_000_000));
       await timeout(TIME_OUT);
-      console.log("10 000 000 USDT sent to %s", TEST_WALLET[iterator]);
+      console.log("10 000 000 wxDAI sent to %s", TEST_WALLET[iterator]);
     }
     console.log();
 
