@@ -45,11 +45,26 @@ const makeBet = async (totoBetting, bettor, conditionIdHash, outcome, amount) =>
   return betTokenId;
 };
 
+const makeBetNative = async (totoBetting, bettor, conditionIdHash, outcome, amount) => {
+  let txBet = await totoBetting.connect(bettor).makeBetNative(conditionIdHash, outcome, {
+    value: BigNumber.from(amount),
+  });
+  let betTokenId = await getTokenId(txBet);
+
+  return betTokenId;
+};
+
 const getTokenId = async (txBet) => {
   let eBet = (await txBet.wait()).events.filter((x) => {
     return x.event == "NewBet";
   });
   return eBet[0].args[1];
+};
+
+const getUsedGas = async (tx) => {
+  const receipt = await tx.wait();
+  const gas = BigInt(receipt.cumulativeGasUsed) * BigInt(receipt.effectiveGasPrice);
+  return gas;
 };
 
 async function getBlockTime(ethers) {
@@ -86,6 +101,8 @@ module.exports = {
   prepareStand,
   createCondition,
   makeBet,
+  makeBetNative,
+  getUsedGas,
   getBlockTime,
   timeShift,
   timeout,

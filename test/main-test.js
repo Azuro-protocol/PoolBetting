@@ -248,6 +248,72 @@ describe("TotoBetting test", function () {
         expect(await wxDAI.balanceOf(bettor.address)).to.be.equal(balance.add(reward));
       }
     });
+    it("Make bets and withdraw payout in native token", async () => {
+      let nBettors;
+      let bets = [],
+        betTokens = [];
+      let totalNetBets, totalWinBets;
+      let bettor, balance, bet, outcome, betToken;
+      let txWithdraw, usedGas;
+
+      for (let i = 0; i < TRIES; i++) {
+        oracleCondId++;
+        time = await getBlockTime(ethers);
+        condIdHash = await createCondition(
+          totoBetting,
+          oracle,
+          oracleCondId,
+          SCOPE_ID,
+          [OUTCOMEWIN, OUTCOMELOSE],
+          time + ONE_HOUR,
+          IPFS
+        );
+
+        nBettors = Math.floor(Math.random() * (MAX_BETTORS - MIN_BETTORS + 1) + MIN_BETTORS);
+        totalNetBets = totalWinBets = BigNumber.from(0);
+
+        for (let k = 0; k < nBettors; k++) {
+          bettor = bettors[k];
+          outcome = k == 0 ? OUTCOMEWIN : k == 1 ? OUTCOMELOSE : Math.random() > 1 / 2 ? OUTCOMEWIN : OUTCOMELOSE;
+          bet = randomTokens(2);
+          totalNetBets = totalNetBets.add(bet);
+          if (outcome == OUTCOMEWIN) {
+            totalWinBets = totalWinBets.add(bet);
+          }
+          bets[k] = bet;
+
+          betToken = await makeBetNative(totoBetting, bettor, condIdHash, outcome, bet);
+          expect(await totoBetting.balanceOf(bettor.address, betToken)).to.be.equal(bet);
+          betTokens[k] = betToken;
+        }
+
+        timeShift(time + ONE_HOUR);
+        await totoBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN);
+
+        for (let k = 0; k < nBettors; k++) {
+          bettor = bettors[k];
+          balance = await ethers.provider.getBalance(bettor.address);
+          betToken = betTokens[k];
+          txWithdraw = await totoBetting.connect(bettor).withdrawPayoutNative([betToken]);
+          usedGas = await getUsedGas(txWithdraw);
+          if (betToken.eq(betTokens[0])) {
+            expect(await ethers.provider.getBalance(bettor.address)).to.be.equal(
+              balance
+                .add(
+                  totalNetBets
+                    .mul(bets[k])
+                    .div(totalWinBets)
+                    .mul(10 ** 9 - FEE)
+                    .div(10 ** 9)
+                )
+                .sub(usedGas)
+            );
+          } else {
+            expect(await ethers.provider.getBalance(bettor.address)).to.be.equal(balance.sub(usedGas));
+          }
+        }
+      }
+    });
     it("Get refund for canceled condition", async () => {
       let nBettors;
       let balances = [],
