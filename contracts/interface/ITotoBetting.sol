@@ -45,11 +45,6 @@ interface ITotoBetting {
         uint128 amount
     );
 
-    event BettorWin(
-        address indexed bettor,
-        uint256[] indexed tokensIds,
-        uint256 amount
-    );
     // Some errors have same names as events or modifiers so used "E" prefix
     error EOnlyOracle();
 

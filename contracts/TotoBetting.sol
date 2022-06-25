@@ -3,6 +3,7 @@
 pragma solidity ^0.8.4;
 
 import "./interface/ITotoBetting.sol";
+import "./interface/IWNative.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
@@ -33,6 +34,10 @@ contract TotoBetting is OwnableUpgradeable, ERC1155Upgradeable, ITotoBetting {
     modifier onlyOracle() {
         if (!oracles[msg.sender]) revert EOnlyOracle();
         _;
+    }
+
+    receive() external payable {
+        assert(msg.sender == token); // only accept native tokens via fallback from the WETH contract
     }
 
     /**
@@ -216,16 +221,46 @@ contract TotoBetting is OwnableUpgradeable, ERC1155Upgradeable, ITotoBetting {
 
     /**
      * @notice Bet `amount` tokens that in the condition `conditionId` will happen outcome with id `outcome`.
-     * @dev    Minted tokenId = 2 * `conditionId` + index of outcome `outcome` in condition struct.
-     * @param  conditionId the match or game id
-     * @param  outcome id of predicted outcome
-     * @param  amount bet amount in tokens
+     * @dev    See {_makeBet}.
      */
     function makeBet(
         uint256 conditionId,
         uint64 outcome,
         uint128 amount
     ) external {
+        TransferHelper.safeTransferFrom(
+            token,
+            msg.sender,
+            address(this),
+            amount
+        );
+        _makeBet(conditionId, outcome, amount);
+    }
+
+    /**
+     * @notice Bet transferred native tokens that in the condition `conditionId` will happen outcome with id `outcome`.
+     * @dev    See {_makeBet}.
+     */
+    function makeBetNative(uint256 conditionId, uint64 outcome)
+        external
+        payable
+    {
+        IWNative(token).deposit{value: msg.value}();
+        _makeBet(conditionId, outcome, uint128(msg.value));
+    }
+
+    /**
+     * @notice Bet `amount` tokens that in the condition `conditionId` will happen outcome with id `outcome`.
+     * @dev    Minted tokenId = 2 * `conditionId` + index of outcome `outcome` in condition struct.
+     * @param  conditionId the match or game id
+     * @param  outcome id of predicted outcome
+     * @param  amount bet amount in tokens
+     */
+    function _makeBet(
+        uint256 conditionId,
+        uint64 outcome,
+        uint128 amount
+    ) internal {
         if (amount == 0) revert EAmountMustNotBeZero();
 
         Condition storage condition = getCondition(conditionId);
@@ -234,23 +269,13 @@ contract TotoBetting is OwnableUpgradeable, ERC1155Upgradeable, ITotoBetting {
             revert EConditionCanceled(conditionId);
         if (block.timestamp >= condition.timestamp)
             revert EConditionStarted(conditionId);
-
         outcomeIsCorrect(condition, outcome);
 
         uint256 tokenId = conditionId *
             2 -
             (outcome == condition.outcomes[0] ? 1 : 0);
-
         condition.totalNetBets[(tokenId + 1) % 2] += amount;
-
         super._mint(msg.sender, tokenId, amount, "");
-
-        TransferHelper.safeTransferFrom(
-            token,
-            msg.sender,
-            address(this),
-            amount
-        );
 
         emit NewBet(msg.sender, tokenId, conditionId, outcome, amount);
     }
@@ -274,11 +299,32 @@ contract TotoBetting is OwnableUpgradeable, ERC1155Upgradeable, ITotoBetting {
     }
 
     /**
-     * @notice Withdraw payout based on bets in finished or cancelled conditions.
+     * @notice Withdraw payout based on bet with AzuroBet token `tokenId` in finished or cancelled condition.
      * @param  tokenIds array of bet tokens ids withdraw payout to
      */
     function withdrawPayout(uint256[] calldata tokenIds) external {
-        uint256 totalPayout;
+        uint256 amount = _withdrawPayout(tokenIds);
+        TransferHelper.safeTransfer(token, msg.sender, amount);
+    }
+
+    /**
+     * @notice Withdraw payout in native token based on bet with AzuroBet token `tokenId` in finished or cancelled condition.
+     * @param  tokenIds array of bet tokens ids withdraw payout to
+     */
+    function withdrawPayoutNative(uint256[] calldata tokenIds) external {
+        uint256 amount = _withdrawPayout(tokenIds);
+        IWNative(token).withdraw(amount);
+        TransferHelper.safeTransferETH(msg.sender, amount);
+    }
+
+    /**
+     * @notice Withdraw payout based on bets in finished or cancelled conditions.
+     * @param  tokenIds array of bet tokens ids withdraw payout to
+     */
+    function _withdrawPayout(uint256[] calldata tokenIds)
+        internal
+        returns (uint256 totalPayout)
+    {
         uint256 refunds;
         for (uint256 i = 0; i < tokenIds.length; ++i) {
             uint256 tokenId = tokenIds[i];
@@ -314,10 +360,6 @@ contract TotoBetting is OwnableUpgradeable, ERC1155Upgradeable, ITotoBetting {
             (totalPayout * (multiplier - daoFee)) /
             multiplier +
             refunds;
-
-        TransferHelper.safeTransfer(token, msg.sender, totalPayout);
-
-        emit BettorWin(msg.sender, tokenIds, totalPayout);
     }
 
     /**
