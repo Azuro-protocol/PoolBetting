@@ -23,7 +23,7 @@ contract TotoBetting is OwnableUpgradeable, ERC1155Upgradeable, ITotoBetting {
     uint32 public multiplier;
 
     mapping(address => bool) public oracles;
-    mapping(address => mapping(uint256 => uint256)) public oracleConditionIds; // oracle -> oracleConditionId -> conditionId
+    mapping(address => mapping(uint256 => uint256)) public oracleCondIds; // oracle -> oracleConditionId -> conditionId
 
     mapping(uint256 => Condition) public conditions;
     uint256 public lastConditionId; // starts with 1
@@ -96,13 +96,13 @@ contract TotoBetting is OwnableUpgradeable, ERC1155Upgradeable, ITotoBetting {
         uint64 timestamp,
         bytes32 ipfsHash
     ) external onlyOracle {
-        uint256 conditionId = oracleConditionIds[msg.sender][oracleCondId];
+        uint256 conditionId = oracleCondIds[msg.sender][oracleCondId];
         if (conditionId != 0) revert EConditionAlreadyCreated(conditionId);
         if (outcomes[0] == outcomes[1]) revert ESameOutcomes();
         if (timestamp <= block.timestamp + expireTimer)
             revert EConditionExpired();
 
-        oracleConditionIds[msg.sender][oracleCondId] = ++lastConditionId;
+        oracleCondIds[msg.sender][oracleCondId] = ++lastConditionId;
 
         Condition storage newCondition = conditions[lastConditionId];
         newCondition.outcomes = outcomes;
@@ -122,7 +122,7 @@ contract TotoBetting is OwnableUpgradeable, ERC1155Upgradeable, ITotoBetting {
         external
         onlyOracle
     {
-        uint256 conditionId = oracleConditionIds[msg.sender][oracleCondId];
+        uint256 conditionId = oracleCondIds[msg.sender][oracleCondId];
 
         Condition storage condition = getCondition(conditionId);
 
@@ -181,7 +181,7 @@ contract TotoBetting is OwnableUpgradeable, ERC1155Upgradeable, ITotoBetting {
      * @param   oracleCondId the current match or game id in oracle's internal system
      */
     function cancelCondition(uint256 oracleCondId) external onlyOracle {
-        uint256 conditionId = oracleConditionIds[msg.sender][oracleCondId];
+        uint256 conditionId = oracleCondIds[msg.sender][oracleCondId];
         Condition storage condition = getCondition(conditionId);
 
         if (condition.state == ConditionState.RESOLVED)
