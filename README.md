@@ -40,7 +40,7 @@ npm run node
    ```
    where **%network%** is name of network you would deploy your contract to.
 ### Upgrade contract
-1. Fill up **CONTRACT_ADDRESS** environment key with address of deployed TotoBetting proxy.  
+1. Fill up **CONTRACT_ADDRESS** environment key with address of deployed PullBetting proxy.  
 2. Run command:
    ```
    npm run upgrade %network%
@@ -50,7 +50,7 @@ npm run node
 ## Rinkeby test network
 ### Contracts
 ```
-TotoBetting  0x5e74127D022A8471b9090B227A5aac534231BaA4
+PullBetting  0x5e74127D022A8471b9090B227A5aac534231BaA4
 Impl         0xbCd45D027bDC3Af1d9916aebCd0a2fE506015b20
 USDT         0xfF20e2e5768C666e873EB355ee48Ad16cAC317ee
 ```

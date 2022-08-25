@@ -3,9 +3,10 @@ const hre = require("hardhat");
 
 const { tokens, timeout, getBlockTime, createCondition } = require("../utils/utils");
 
-const FEE = 10000000; // 1%
+const MULTIPLIER = 10**12;
+const FEE = MULTIPLIER * 0.01; // 1%
 const EVENT_START_IN = 3600; // 1 hour
-const SCOPE_ID = 0; // game id
+
 const ORACLES = [
   "0x0D62B886234EA4dC9bd86FaB239578DcD0075fb0",
   "0x2c33fEe397eEA9a3573A31a2Ea926424E35584a1",
@@ -23,7 +24,7 @@ async function main() {
   const oracle = deployer;
 
   let oracleCondID = 0;
-  let wxDAI, totoBetting, totoBettingImpl, testWallet;
+  let wxDAI, pullBetting, pullBettingImpl, testWallet;
 
   console.log("Deployer wallet: ", deployer.address);
   console.log("Deployer balance:", (await deployer.getBalance()).toString());
@@ -47,24 +48,24 @@ async function main() {
     await timeout(TIME_OUT);
   }
 
-  // TotoBetting
+  // PullBetting
   {
-    const TotoBetting = await ethers.getContractFactory("TotoBetting");
-    totoBetting = await upgrades.deployProxy(TotoBetting, [wxDAI.address, oracle.address, FEE]);
-    console.log("TotoBetting proxy deployed to:", totoBetting.address);
+    const PullBetting = await ethers.getContractFactory("PullBetting");
+    pullBetting = await upgrades.deployProxy(PullBetting, [wxDAI.address, oracle.address, FEE]);
+    console.log("PullBetting proxy deployed to:", pullBetting.address);
     await timeout(TIME_OUT);
-    await totoBetting.deployed();
+    await pullBetting.deployed();
     await timeout(TIME_OUT);
-    totoBettingImpl = await upgrades.erc1967.getImplementationAddress(totoBetting.address);
-    await totoBettingImpl.initialize();
-    console.log("TotoBetting deployed to:", totoBettingImpl);
+    pullBettingImpl = await upgrades.erc1967.getImplementationAddress(pullBetting.address);
+    await pullBettingImpl.initialize();
+    console.log("PullBetting deployed to:", pullBettingImpl);
     console.log();
   }
 
   // settings
   {
     const approveAmount = tokens(999_999_999);
-    await wxDAI.approve(totoBetting.address, approveAmount);
+    await wxDAI.approve(pullBetting.address, approveAmount);
     await timeout(TIME_OUT);
     console.log("Approve done", approveAmount.toString());
     console.log();
@@ -74,7 +75,7 @@ async function main() {
     for (const iterator of Array(3).keys()) {
       oracleCondID++;
       await createCondition(
-        totoBetting,
+        pullBetting,
         oracle,
         oracleCondID,
         SCOPE_ID,
@@ -98,7 +99,7 @@ async function main() {
     console.log();
 
     for (const iterator of ORACLES.keys()) {
-      await totoBetting.addOracle(ORACLES[iterator]);
+      await pullBetting.addOracle(ORACLES[iterator]);
       await timeout(TIME_OUT);
     }
     console.log("Oracles:", ORACLES);
@@ -107,7 +108,7 @@ async function main() {
   // verification
   if (chainId != 0x7a69) {
     await hre.run("verify:verify", {
-      address: totoBettingImpl,
+      address: pullBettingImpl,
       constructorArguments: [],
     });
   }
