@@ -1,0 +1,603 @@
+{
+  "manifestVersion": "3.2",
+  "admin": {
+    "address": "0x17Fee9861Ec7BC676e3a90E02C46860472C9bFc3",
+    "txHash": "0x491c2d4c490486b0c195ff3ab16b194afc0d7ae236ba8743aee1f21d238f303f"
+  },
+  "proxies": [
+    {
+      "address": "0x1df819Bf13D40e9d7db2c53E40CD37A708Ff9977",
+      "txHash": "0x2da59377ed45201ef9ae967862e76138a39783491194c8f0878374ec8c7f5d20",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xf3171a70c2887FdF555d281b38F94a392f24a0Bc",
+      "txHash": "0x209071687478daf56ccd686a13ebf5102b2de21b070105fcecadb1f3891049a4",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xE9f7e1FdF377a29eea01b23e379Bf3f1F3eE8537",
+      "txHash": "0xde15b51e3c9d1fc273b2ac449bf343eaff5c8a344275cb4ecbd323911b3e55b2",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xD4858C66b93FDa94b094D35963B613b7689bAE92",
+      "txHash": "0xbc182d55f9af3faf7f239f6bf7398de6c9af642e55b962bba5b9ccb30d6c487e",
+      "kind": "transparent"
+    }
+  ],
+  "impls": {
+    "32e5b0d9b38cfec08303f56e3c68ddced87e791bd80cde31abab1ce3509169d8": {
+      "address": "0x2c5dBF7A97452c4C5b4E1d5BD9c949F27045A39F",
+      "txHash": "0xdba92e7f7d048fcee804dfe3dea6e75946d32c12d0cf8ce9100fa916b5819519",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\utils\\ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:87"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ERC165Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\utils\\introspection\\ERC165Upgradeable.sol:41"
+          },
+          {
+            "label": "_balances",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))",
+            "contract": "ERC1155Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC1155\\ERC1155Upgradeable.sol:25"
+          },
+          {
+            "label": "_operatorApprovals",
+            "offset": 0,
+            "slot": "152",
+            "type": "t_mapping(t_address,t_mapping(t_address,t_bool))",
+            "contract": "ERC1155Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC1155\\ERC1155Upgradeable.sol:28"
+          },
+          {
+            "label": "_uri",
+            "offset": 0,
+            "slot": "153",
+            "type": "t_string_storage",
+            "contract": "ERC1155Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC1155\\ERC1155Upgradeable.sol:31"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "154",
+            "type": "t_array(t_uint256)47_storage",
+            "contract": "ERC1155Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC1155\\ERC1155Upgradeable.sol:522"
+          },
+          {
+            "label": "token",
+            "offset": 0,
+            "slot": "201",
+            "type": "t_address",
+            "contract": "PullBetting",
+            "src": "contracts\\PullBetting.sol:13"
+          },
+          {
+            "label": "daoFee",
+            "offset": 0,
+            "slot": "202",
+            "type": "t_uint128",
+            "contract": "PullBetting",
+            "src": "contracts\\PullBetting.sol:15"
+          },
+          {
+            "label": "DAOReward",
+            "offset": 16,
+            "slot": "202",
+            "type": "t_uint128",
+            "contract": "PullBetting",
+            "src": "contracts\\PullBetting.sol:16"
+          },
+          {
+            "label": "expireTimer",
+            "offset": 0,
+            "slot": "203",
+            "type": "t_uint64",
+            "contract": "PullBetting",
+            "src": "contracts\\PullBetting.sol:21"
+          },
+          {
+            "label": "oracles",
+            "offset": 0,
+            "slot": "204",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "PullBetting",
+            "src": "contracts\\PullBetting.sol:25"
+          },
+          {
+            "label": "oracleCondIds",
+            "offset": 0,
+            "slot": "205",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))",
+            "contract": "PullBetting",
+            "src": "contracts\\PullBetting.sol:26"
+          },
+          {
+            "label": "conditions",
+            "offset": 0,
+            "slot": "206",
+            "type": "t_mapping(t_uint256,t_struct(Condition)3184_storage)",
+            "contract": "PullBetting",
+            "src": "contracts\\PullBetting.sol:28"
+          },
+          {
+            "label": "lastConditionId",
+            "offset": 0,
+            "slot": "207",
+            "type": "t_uint256",
+            "contract": "PullBetting",
+            "src": "contracts\\PullBetting.sol:29"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_uint128)2_storage": {
+            "label": "uint128[2]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)47_storage": {
+            "label": "uint256[47]",
+            "numberOfBytes": "1504"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_array(t_uint64)2_storage": {
+            "label": "uint64[2]",
+            "numberOfBytes": "32"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_enum(ConditionState)3166": {
+            "label": "enum IPullBetting.ConditionState",
+            "members": [
+              "CREATED",
+              "RESOLVED",
+              "CANCELED"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_address,t_bool))": {
+            "label": "mapping(address => mapping(address => bool))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_uint256,t_uint256))": {
+            "label": "mapping(address => mapping(uint256 => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(uint256 => mapping(address => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(Condition)3184_storage)": {
+            "label": "mapping(uint256 => struct IPullBetting.Condition)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_uint256)": {
+            "label": "mapping(uint256 => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Condition)3184_storage": {
+            "label": "struct IPullBetting.Condition",
+            "members": [
+              {
+                "label": "ipfsHash",
+                "type": "t_bytes32",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "totalNetBets",
+                "type": "t_array(t_uint128)2_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "outcomes",
+                "type": "t_array(t_uint64)2_storage",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "outcomeWon",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "timestamp",
+                "type": "t_uint64",
+                "offset": 8,
+                "slot": "3"
+              },
+              {
+                "label": "state",
+                "type": "t_enum(ConditionState)3166",
+                "offset": 16,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "128"
+          },
+          "t_uint128": {
+            "label": "uint128",
+            "numberOfBytes": "16"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "4d2fa959b180169e45c44f4c93c3803502f968939d02df882338813153a76bc8": {
+      "address": "0x96Dac265afe71a27d61B18fdea2C7766903155C3",
+      "txHash": "0x75d5e813f2a541652d9786c841a103078eb8dedeba618763c621387d14e2d3f9",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\utils\\ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:87"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ERC165Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\utils\\introspection\\ERC165Upgradeable.sol:41"
+          },
+          {
+            "label": "_balances",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))",
+            "contract": "ERC1155Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC1155\\ERC1155Upgradeable.sol:25"
+          },
+          {
+            "label": "_operatorApprovals",
+            "offset": 0,
+            "slot": "152",
+            "type": "t_mapping(t_address,t_mapping(t_address,t_bool))",
+            "contract": "ERC1155Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC1155\\ERC1155Upgradeable.sol:28"
+          },
+          {
+            "label": "_uri",
+            "offset": 0,
+            "slot": "153",
+            "type": "t_string_storage",
+            "contract": "ERC1155Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC1155\\ERC1155Upgradeable.sol:31"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "154",
+            "type": "t_array(t_uint256)47_storage",
+            "contract": "ERC1155Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC1155\\ERC1155Upgradeable.sol:522"
+          },
+          {
+            "label": "token",
+            "offset": 0,
+            "slot": "201",
+            "type": "t_address",
+            "contract": "PullBetting",
+            "src": "contracts\\PullBetting.sol:13"
+          },
+          {
+            "label": "daoFee",
+            "offset": 0,
+            "slot": "202",
+            "type": "t_uint128",
+            "contract": "PullBetting",
+            "src": "contracts\\PullBetting.sol:15"
+          },
+          {
+            "label": "DAOReward",
+            "offset": 16,
+            "slot": "202",
+            "type": "t_uint128",
+            "contract": "PullBetting",
+            "src": "contracts\\PullBetting.sol:16"
+          },
+          {
+            "label": "expireTimer",
+            "offset": 0,
+            "slot": "203",
+            "type": "t_uint64",
+            "contract": "PullBetting",
+            "src": "contracts\\PullBetting.sol:21"
+          },
+          {
+            "label": "oracles",
+            "offset": 0,
+            "slot": "204",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "PullBetting",
+            "src": "contracts\\PullBetting.sol:25"
+          },
+          {
+            "label": "oracleCondIds",
+            "offset": 0,
+            "slot": "205",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))",
+            "contract": "PullBetting",
+            "src": "contracts\\PullBetting.sol:26"
+          },
+          {
+            "label": "conditions",
+            "offset": 0,
+            "slot": "206",
+            "type": "t_mapping(t_uint256,t_struct(Condition)3184_storage)",
+            "contract": "PullBetting",
+            "src": "contracts\\PullBetting.sol:28"
+          },
+          {
+            "label": "lastConditionId",
+            "offset": 0,
+            "slot": "207",
+            "type": "t_uint256",
+            "contract": "PullBetting",
+            "src": "contracts\\PullBetting.sol:29"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_uint128)2_storage": {
+            "label": "uint128[2]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)47_storage": {
+            "label": "uint256[47]",
+            "numberOfBytes": "1504"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_array(t_uint64)2_storage": {
+            "label": "uint64[2]",
+            "numberOfBytes": "32"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_enum(ConditionState)3166": {
+            "label": "enum IPullBetting.ConditionState",
+            "members": [
+              "CREATED",
+              "RESOLVED",
+              "CANCELED"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_address,t_bool))": {
+            "label": "mapping(address => mapping(address => bool))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_uint256,t_uint256))": {
+            "label": "mapping(address => mapping(uint256 => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(uint256 => mapping(address => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(Condition)3184_storage)": {
+            "label": "mapping(uint256 => struct IPullBetting.Condition)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_uint256)": {
+            "label": "mapping(uint256 => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Condition)3184_storage": {
+            "label": "struct IPullBetting.Condition",
+            "members": [
+              {
+                "label": "ipfsHash",
+                "type": "t_bytes32",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "totalNetBets",
+                "type": "t_array(t_uint128)2_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "outcomes",
+                "type": "t_array(t_uint64)2_storage",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "outcomeWon",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "timestamp",
+                "type": "t_uint64",
+                "offset": 8,
+                "slot": "3"
+              },
+              {
+                "label": "state",
+                "type": "t_enum(ConditionState)3166",
+                "offset": 16,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "128"
+          },
+          "t_uint128": {
+            "label": "uint128",
+            "numberOfBytes": "16"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    }
+  }
+}

@@ -10,6 +10,7 @@ require("dotenv").config();
 
 const ALCHEMY_API_KEY_RINKEBY = process.env.ALCHEMY_API_KEY_RINKEBY || "";
 const RINKEBY_PRIVATE_KEY = process.env.RINKEBY_PRIVATE_KEY || "";
+const MAINNET_PRIVATE_KEY = process.env.MAINNET_PRIVATE_KEY || "";
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "";
 
 task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
@@ -38,6 +39,14 @@ if (ALCHEMY_API_KEY_RINKEBY != "" && RINKEBY_PRIVATE_KEY != "") {
   };
 }
 
+if (MAINNET_PRIVATE_KEY != "") {
+  exportNetworks["gnosis"] = {
+    url: `https://rpc.gnosischain.com/`,
+    accounts: [`${MAINNET_PRIVATE_KEY}`],
+    gasPrice: 9000000000
+  }
+}
+
 module.exports = {
   solidity: {
     compilers: [
@@ -46,7 +55,7 @@ module.exports = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 1,
+            runs: 1000000,
           },
         },
       },
@@ -69,7 +78,7 @@ module.exports = {
   docgen: {
     path: "./docs",
     clear: false,
-    only: ["TotoBetting"],
+    only: ["PullBetting"],
     runOnCompile: true,
   },
 };

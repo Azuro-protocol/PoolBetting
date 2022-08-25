@@ -2,9 +2,8 @@
 
 ## Documentation
 
-- [Developer](https://htmlpreview.github.io/?https://github.com/Azuro-protocol/TotoBetting/blob/main/docs/index.html#/)  
-- [Oracle](https://htmlpreview.github.io/?https://github.com/Azuro-protocol/TotoBetting/blob/main/docs/bettor/index.html#/contracts/TotoBetting.sol:TotoBetting)  
-- [Bettor](https://htmlpreview.github.io/?https://github.com/Azuro-protocol/TotoBetting/blob/main/docs/oracle/index.html#/contracts/TotoBetting.sol:TotoBetting)
+- [Developer](https://htmlpreview.github.io/?https://github.com/Azuro-protocol/PullBetting/blob/main/docs/index.html#/)  
+
 ## Usage
 ### Prerequisites
 1. Install hardhat locally in the project folder:
@@ -46,6 +45,14 @@ npm run node
    npm run upgrade %network%
    ```
    where **%network%** is name of network where you would like to upgrade your contract.
+
+
+## Gnosis main network
+### Contracts
+```
+PullBetting  0xD4858C66b93FDa94b094D35963B613b7689bAE92
+Impl         0x96Dac265afe71a27d61B18fdea2C7766903155C3
+```
 
 ## Rinkeby test network
 ### Contracts
