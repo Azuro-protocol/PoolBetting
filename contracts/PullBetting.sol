@@ -20,7 +20,7 @@ contract PullBetting is OwnableUpgradeable, ERC1155Upgradeable, IPullBetting {
      */
     uint64 public expireTimer;
 
-    uint48 public multiplier;
+    uint48 constant multiplier = 10**12;
 
     mapping(address => bool) public oracles;
     mapping(address => mapping(uint256 => uint256)) public oracleCondIds; // oracle -> oracleConditionId -> conditionId
@@ -51,12 +51,10 @@ contract PullBetting is OwnableUpgradeable, ERC1155Upgradeable, IPullBetting {
         uint128 fee
     ) external virtual initializer {
         if (token_ == address(0)) revert WrongToken();
+        if (fee >= multiplier) revert WrongFee();
 
         __Ownable_init();
         __ERC1155_init("Pull Betting");
-        multiplier = 10**12;
-
-        if (fee >= multiplier) revert WrongFee();
         token = token_;
         oracles[oracle] = true;
         expireTimer = 600;

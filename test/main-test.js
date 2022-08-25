@@ -13,7 +13,7 @@ const {
   randomTokens,
 } = require("../utils/utils");
 
-const MULTIPLIER = 10**12;
+const MULTIPLIER = 10 ** 12;
 
 const ORACLE_CONDITION_START = 1000000;
 const FEE = MULTIPLIER * 0.01; // 1%
@@ -437,11 +437,7 @@ describe("PullBetting test", function () {
       await pullBetting.connect(owner).claimDAOReward();
 
       expect(await wxDAI.balanceOf(owner.address)).to.be.equal(
-        balance.add(
-          BigNumber.from(tokens(300))
-            .mul(FEE)
-            .div(MULTIPLIER)
-        )
+        balance.add(BigNumber.from(tokens(300)).mul(FEE).div(MULTIPLIER))
       );
     });
   });
