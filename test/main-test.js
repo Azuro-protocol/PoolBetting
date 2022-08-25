@@ -13,8 +13,10 @@ const {
   randomTokens,
 } = require("../utils/utils");
 
+const MULTIPLIER = 10**12;
+
 const ORACLE_CONDITION_START = 1000000;
-const FEE = 10 ** 6; // in decimals 10^9
+const FEE = MULTIPLIER * 0.01; // 1%
 const IPFS = "dummy";
 const BET = tokens(100);
 const ONE_HOUR = 3600;
@@ -120,8 +122,8 @@ describe("TotoBetting test", function () {
                 totalNetBets
                   .mul(bets[k])
                   .div(totalWinBets)
-                  .mul(10 ** 9 - FEE)
-                  .div(10 ** 9)
+                  .mul(MULTIPLIER - FEE)
+                  .div(MULTIPLIER)
               )
             );
           } else {
@@ -181,8 +183,8 @@ describe("TotoBetting test", function () {
                 totalNetBets
                   .mul(bets[k])
                   .div(totalWinBets)
-                  .mul(10 ** 9 - FEE)
-                  .div(10 ** 9)
+                  .mul(MULTIPLIER - FEE)
+                  .div(MULTIPLIER)
               )
             );
           } else {
@@ -240,7 +242,7 @@ describe("TotoBetting test", function () {
             reward = reward.add(bet.add(BigNumber.from(BET).mul(2)).mul(bet).div(bet.add(BET)));
           }
         }
-        reward = reward.mul(10 ** 9 - FEE).div(10 ** 9);
+        reward = reward.mul(MULTIPLIER - FEE).div(MULTIPLIER);
         expect(await wxDAI.balanceOf(bettor.address)).to.be.equal(balance.add(reward));
       }
     });
@@ -298,8 +300,8 @@ describe("TotoBetting test", function () {
                   totalNetBets
                     .mul(bets[k])
                     .div(totalWinBets)
-                    .mul(10 ** 9 - FEE)
-                    .div(10 ** 9)
+                    .mul(MULTIPLIER - FEE)
+                    .div(MULTIPLIER)
                 )
                 .sub(usedGas)
             );
@@ -438,7 +440,7 @@ describe("TotoBetting test", function () {
         balance.add(
           BigNumber.from(tokens(300))
             .mul(FEE)
-            .div(10 ** 9)
+            .div(MULTIPLIER)
         )
       );
     });

@@ -20,7 +20,7 @@ contract TotoBetting is OwnableUpgradeable, ERC1155Upgradeable, ITotoBetting {
      */
     uint64 public expireTimer;
 
-    uint32 public multiplier;
+    uint48 public multiplier;
 
     mapping(address => bool) public oracles;
     mapping(address => mapping(uint256 => uint256)) public oracleCondIds; // oracle -> oracleConditionId -> conditionId
@@ -54,7 +54,7 @@ contract TotoBetting is OwnableUpgradeable, ERC1155Upgradeable, ITotoBetting {
 
         __Ownable_init();
         __ERC1155_init("Toto Betting");
-        multiplier = 10**9;
+        multiplier = 10**12;
 
         if (fee >= multiplier) revert WrongFee();
         token = token_;
