@@ -9,21 +9,21 @@ const prepareStand = async (ethers, owner, oracle, oracle2, fee) => {
   await owner.sendTransaction({ to: wxDAI.address, value: ethers.utils.parseEther("10000000") });
 
   // pull betting core
-  PullBetting = await ethers.getContractFactory("PullBetting");
-  pullBetting = await upgrades.deployProxy(PullBetting, [wxDAI.address, oracle.address, fee]);
-  await pullBetting.deployed();
+  PoolBetting = await ethers.getContractFactory("PoolBetting");
+  poolBetting = await upgrades.deployProxy(PoolBetting, [wxDAI.address, oracle.address, fee]);
+  await poolBetting.deployed();
 
   // setting up
-  await pullBetting.connect(owner).addOracle(oracle2.address);
+  await poolBetting.connect(owner).addOracle(oracle2.address);
 
   const approveAmount = tokens(10 ** 9);
-  await wxDAI.approve(pullBetting.address, approveAmount);
+  await wxDAI.approve(poolBetting.address, approveAmount);
 
-  return [pullBetting, wxDAI];
+  return [poolBetting, wxDAI];
 };
 
-const createCondition = async (pullBetting, oracle, oracleCondId_, outcomes, timestamp, ipfsHash) => {
-  const txCreate = await pullBetting
+const createCondition = async (poolBetting, oracle, oracleCondId_, outcomes, timestamp, ipfsHash) => {
+  const txCreate = await poolBetting
     .connect(oracle)
     .createCondition(oracleCondId_, outcomes, timestamp, ethers.utils.formatBytes32String(ipfsHash));
   const conditionIdHash = await getConditionId_Hash(txCreate);
@@ -38,15 +38,15 @@ const getConditionId_Hash = async (txCreateCondition) => {
   return eCondition[0].args.conditionId.toString();
 };
 
-const makeBet = async (pullBetting, bettor, conditionIdHash, outcome, amount) => {
-  let txBet = await pullBetting.connect(bettor).bet(conditionIdHash, outcome, amount);
+const makeBet = async (poolBetting, bettor, conditionIdHash, outcome, amount) => {
+  let txBet = await poolBetting.connect(bettor).bet(conditionIdHash, outcome, amount);
   let betTokenId = await getTokenId(txBet);
 
   return betTokenId;
 };
 
-const makeBetNative = async (pullBetting, bettor, conditionIdHash, outcome, amount) => {
-  let txBet = await pullBetting.connect(bettor).betNative(conditionIdHash, outcome, {
+const makeBetNative = async (poolBetting, bettor, conditionIdHash, outcome, amount) => {
+  let txBet = await poolBetting.connect(bettor).betNative(conditionIdHash, outcome, {
     value: BigNumber.from(amount),
   });
   let betTokenId = await getTokenId(txBet);

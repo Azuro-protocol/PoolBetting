@@ -2,14 +2,14 @@
 
 pragma solidity ^0.8.4;
 
-import "./interface/IPullBetting.sol";
+import "./interface/IPoolBetting.sol";
 import "./interface/IWNative.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
 /// @title Azuro Totalizator
-contract PullBetting is OwnableUpgradeable, ERC1155Upgradeable, IPullBetting {
+contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
     address public token;
 
     uint128 public daoFee;
@@ -54,7 +54,7 @@ contract PullBetting is OwnableUpgradeable, ERC1155Upgradeable, IPullBetting {
         if (fee >= multiplier) revert WrongFee();
 
         __Ownable_init();
-        __ERC1155_init("Pull Betting");
+        __ERC1155_init("Pool Betting");
         token = token_;
         oracles[oracle] = true;
         expireTimer = 600;

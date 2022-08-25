@@ -24,6 +24,11 @@
       "address": "0xD4858C66b93FDa94b094D35963B613b7689bAE92",
       "txHash": "0xbc182d55f9af3faf7f239f6bf7398de6c9af642e55b962bba5b9ccb30d6c487e",
       "kind": "transparent"
+    },
+    {
+      "address": "0xEeb34b5B52422011459F81634Cd39aF33609e7aE",
+      "txHash": "0x252bfe12e8ce57ad44c99a72cc891c2b19c7eb6184b49b780013cc6f10f18d21",
+      "kind": "transparent"
     }
   ],
   "impls": {
@@ -118,64 +123,64 @@
             "offset": 0,
             "slot": "201",
             "type": "t_address",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:13"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:13"
           },
           {
             "label": "daoFee",
             "offset": 0,
             "slot": "202",
             "type": "t_uint128",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:15"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:15"
           },
           {
             "label": "DAOReward",
             "offset": 16,
             "slot": "202",
             "type": "t_uint128",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:16"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:16"
           },
           {
             "label": "expireTimer",
             "offset": 0,
             "slot": "203",
             "type": "t_uint64",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:21"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:21"
           },
           {
             "label": "oracles",
             "offset": 0,
             "slot": "204",
             "type": "t_mapping(t_address,t_bool)",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:25"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:25"
           },
           {
             "label": "oracleCondIds",
             "offset": 0,
             "slot": "205",
             "type": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:26"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:26"
           },
           {
             "label": "conditions",
             "offset": 0,
             "slot": "206",
             "type": "t_mapping(t_uint256,t_struct(Condition)3184_storage)",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:28"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:28"
           },
           {
             "label": "lastConditionId",
             "offset": 0,
             "slot": "207",
             "type": "t_uint256",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:29"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:29"
           }
         ],
         "types": {
@@ -212,7 +217,7 @@
             "numberOfBytes": "32"
           },
           "t_enum(ConditionState)3166": {
-            "label": "enum IPullBetting.ConditionState",
+            "label": "enum IPoolBetting.ConditionState",
             "members": [
               "CREATED",
               "RESOLVED",
@@ -241,7 +246,7 @@
             "numberOfBytes": "32"
           },
           "t_mapping(t_uint256,t_struct(Condition)3184_storage)": {
-            "label": "mapping(uint256 => struct IPullBetting.Condition)",
+            "label": "mapping(uint256 => struct IPoolBetting.Condition)",
             "numberOfBytes": "32"
           },
           "t_mapping(t_uint256,t_uint256)": {
@@ -253,7 +258,7 @@
             "numberOfBytes": "32"
           },
           "t_struct(Condition)3184_storage": {
-            "label": "struct IPullBetting.Condition",
+            "label": "struct IPoolBetting.Condition",
             "members": [
               {
                 "label": "ipfsHash",
@@ -404,64 +409,64 @@
             "offset": 0,
             "slot": "201",
             "type": "t_address",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:13"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:13"
           },
           {
             "label": "daoFee",
             "offset": 0,
             "slot": "202",
             "type": "t_uint128",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:15"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:15"
           },
           {
             "label": "DAOReward",
             "offset": 16,
             "slot": "202",
             "type": "t_uint128",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:16"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:16"
           },
           {
             "label": "expireTimer",
             "offset": 0,
             "slot": "203",
             "type": "t_uint64",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:21"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:21"
           },
           {
             "label": "oracles",
             "offset": 0,
             "slot": "204",
             "type": "t_mapping(t_address,t_bool)",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:25"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:25"
           },
           {
             "label": "oracleCondIds",
             "offset": 0,
             "slot": "205",
             "type": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:26"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:26"
           },
           {
             "label": "conditions",
             "offset": 0,
             "slot": "206",
             "type": "t_mapping(t_uint256,t_struct(Condition)3184_storage)",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:28"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:28"
           },
           {
             "label": "lastConditionId",
             "offset": 0,
             "slot": "207",
             "type": "t_uint256",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:29"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:29"
           }
         ],
         "types": {
@@ -498,7 +503,7 @@
             "numberOfBytes": "32"
           },
           "t_enum(ConditionState)3166": {
-            "label": "enum IPullBetting.ConditionState",
+            "label": "enum IPoolBetting.ConditionState",
             "members": [
               "CREATED",
               "RESOLVED",
@@ -527,7 +532,7 @@
             "numberOfBytes": "32"
           },
           "t_mapping(t_uint256,t_struct(Condition)3184_storage)": {
-            "label": "mapping(uint256 => struct IPullBetting.Condition)",
+            "label": "mapping(uint256 => struct IPoolBetting.Condition)",
             "numberOfBytes": "32"
           },
           "t_mapping(t_uint256,t_uint256)": {
@@ -539,7 +544,293 @@
             "numberOfBytes": "32"
           },
           "t_struct(Condition)3184_storage": {
-            "label": "struct IPullBetting.Condition",
+            "label": "struct IPoolBetting.Condition",
+            "members": [
+              {
+                "label": "ipfsHash",
+                "type": "t_bytes32",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "totalNetBets",
+                "type": "t_array(t_uint128)2_storage",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "outcomes",
+                "type": "t_array(t_uint64)2_storage",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "outcomeWon",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "timestamp",
+                "type": "t_uint64",
+                "offset": 8,
+                "slot": "3"
+              },
+              {
+                "label": "state",
+                "type": "t_enum(ConditionState)3166",
+                "offset": 16,
+                "slot": "3"
+              }
+            ],
+            "numberOfBytes": "128"
+          },
+          "t_uint128": {
+            "label": "uint128",
+            "numberOfBytes": "16"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "7196c8c58b11c2ad902c703bc6ad9c1ca4b71ec8818ab95d226ba94e304e1119": {
+      "address": "0x0472274A079d4710c3B347aeb648FB6F1B1821Db",
+      "txHash": "0x50aed91d37b2f4987b50e50a3bf30aae755a4edc27e07eeecab572c54632c6eb",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\utils\\ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:87"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ERC165Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\utils\\introspection\\ERC165Upgradeable.sol:41"
+          },
+          {
+            "label": "_balances",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))",
+            "contract": "ERC1155Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC1155\\ERC1155Upgradeable.sol:25"
+          },
+          {
+            "label": "_operatorApprovals",
+            "offset": 0,
+            "slot": "152",
+            "type": "t_mapping(t_address,t_mapping(t_address,t_bool))",
+            "contract": "ERC1155Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC1155\\ERC1155Upgradeable.sol:28"
+          },
+          {
+            "label": "_uri",
+            "offset": 0,
+            "slot": "153",
+            "type": "t_string_storage",
+            "contract": "ERC1155Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC1155\\ERC1155Upgradeable.sol:31"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "154",
+            "type": "t_array(t_uint256)47_storage",
+            "contract": "ERC1155Upgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC1155\\ERC1155Upgradeable.sol:522"
+          },
+          {
+            "label": "token",
+            "offset": 0,
+            "slot": "201",
+            "type": "t_address",
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:13"
+          },
+          {
+            "label": "daoFee",
+            "offset": 0,
+            "slot": "202",
+            "type": "t_uint128",
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:15"
+          },
+          {
+            "label": "DAOReward",
+            "offset": 16,
+            "slot": "202",
+            "type": "t_uint128",
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:16"
+          },
+          {
+            "label": "expireTimer",
+            "offset": 0,
+            "slot": "203",
+            "type": "t_uint64",
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:21"
+          },
+          {
+            "label": "oracles",
+            "offset": 0,
+            "slot": "204",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:25"
+          },
+          {
+            "label": "oracleCondIds",
+            "offset": 0,
+            "slot": "205",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))",
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:26"
+          },
+          {
+            "label": "conditions",
+            "offset": 0,
+            "slot": "206",
+            "type": "t_mapping(t_uint256,t_struct(Condition)3184_storage)",
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:28"
+          },
+          {
+            "label": "lastConditionId",
+            "offset": 0,
+            "slot": "207",
+            "type": "t_uint256",
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:29"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_uint128)2_storage": {
+            "label": "uint128[2]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)47_storage": {
+            "label": "uint256[47]",
+            "numberOfBytes": "1504"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_array(t_uint64)2_storage": {
+            "label": "uint64[2]",
+            "numberOfBytes": "32"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_enum(ConditionState)3166": {
+            "label": "enum IPoolBetting.ConditionState",
+            "members": [
+              "CREATED",
+              "RESOLVED",
+              "CANCELED"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_address,t_bool))": {
+            "label": "mapping(address => mapping(address => bool))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_uint256,t_uint256))": {
+            "label": "mapping(address => mapping(uint256 => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(uint256 => mapping(address => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(Condition)3184_storage)": {
+            "label": "mapping(uint256 => struct IPoolBetting.Condition)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_uint256)": {
+            "label": "mapping(uint256 => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Condition)3184_storage": {
+            "label": "struct IPoolBetting.Condition",
             "members": [
               {
                 "label": "ipfsHash",

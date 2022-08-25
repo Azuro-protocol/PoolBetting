@@ -2,19 +2,19 @@
   "manifestVersion": "3.2",
   "admin": {
     "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    "txHash": "0x0e19600853121c31acd5f4e2cfdf4482078ec0138dedb123a144702aa21b2b0d"
+    "txHash": "0x91025eb9bc92eed692e95572eb12a433a3a2de92c785754fbfb445ec4cc7eeab"
   },
   "proxies": [
     {
       "address": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-      "txHash": "0xbe0857dc0b6b3a40ba5884c432b1ef13e0517604261738dc1bc919778df17ca5",
+      "txHash": "0xd5272d62431bf29102f7c10899461d1881df95e1abb610ab63535d86d1ebfcd0",
       "kind": "transparent"
     }
   ],
   "impls": {
-    "32e5b0d9b38cfec08303f56e3c68ddced87e791bd80cde31abab1ce3509169d8": {
+    "7196c8c58b11c2ad902c703bc6ad9c1ca4b71ec8818ab95d226ba94e304e1119": {
       "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-      "txHash": "0xea565fd3516815d2bdd1a9a91202b886acabd2e025115288dc449016da4ec8d6",
+      "txHash": "0x8d6d04277a2d8f8e8fc37713266a1cbaa0eb7e6a661888ab98a627fbea584269",
       "layout": {
         "storage": [
           {
@@ -103,64 +103,64 @@
             "offset": 0,
             "slot": "201",
             "type": "t_address",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:13"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:13"
           },
           {
             "label": "daoFee",
             "offset": 0,
             "slot": "202",
             "type": "t_uint128",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:15"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:15"
           },
           {
             "label": "DAOReward",
             "offset": 16,
             "slot": "202",
             "type": "t_uint128",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:16"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:16"
           },
           {
             "label": "expireTimer",
             "offset": 0,
             "slot": "203",
             "type": "t_uint64",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:21"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:21"
           },
           {
             "label": "oracles",
             "offset": 0,
             "slot": "204",
             "type": "t_mapping(t_address,t_bool)",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:25"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:25"
           },
           {
             "label": "oracleCondIds",
             "offset": 0,
             "slot": "205",
             "type": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:26"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:26"
           },
           {
             "label": "conditions",
             "offset": 0,
             "slot": "206",
             "type": "t_mapping(t_uint256,t_struct(Condition)3184_storage)",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:28"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:28"
           },
           {
             "label": "lastConditionId",
             "offset": 0,
             "slot": "207",
             "type": "t_uint256",
-            "contract": "PullBetting",
-            "src": "contracts\\PullBetting.sol:29"
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:29"
           }
         ],
         "types": {
@@ -197,7 +197,7 @@
             "numberOfBytes": "32"
           },
           "t_enum(ConditionState)3166": {
-            "label": "enum IPullBetting.ConditionState",
+            "label": "enum IPoolBetting.ConditionState",
             "members": [
               "CREATED",
               "RESOLVED",
@@ -226,7 +226,7 @@
             "numberOfBytes": "32"
           },
           "t_mapping(t_uint256,t_struct(Condition)3184_storage)": {
-            "label": "mapping(uint256 => struct IPullBetting.Condition)",
+            "label": "mapping(uint256 => struct IPoolBetting.Condition)",
             "numberOfBytes": "32"
           },
           "t_mapping(t_uint256,t_uint256)": {
@@ -238,7 +238,7 @@
             "numberOfBytes": "32"
           },
           "t_struct(Condition)3184_storage": {
-            "label": "struct IPullBetting.Condition",
+            "label": "struct IPoolBetting.Condition",
             "members": [
               {
                 "label": "ipfsHash",

@@ -23,7 +23,7 @@ async function main() {
   const oracle = deployer;
 
   let oracleCondID = 0;
-  let wxDAI, pullBetting, pullBettingImpl, testWallet;
+  let wxDAI, poolBetting, poolBettingImpl, testWallet;
 
   console.log("Deployer wallet: ", deployer.address);
   console.log("Deployer balance:", (await deployer.getBalance()).toString());
@@ -47,24 +47,24 @@ async function main() {
     await timeout(TIME_OUT);
   }
 
-  // PullBetting
+  // PoolBetting
   {
-    const PullBetting = await ethers.getContractFactory("PullBetting");
-    pullBetting = await upgrades.deployProxy(PullBetting, [wxDAI.address, oracle.address, FEE]);
-    console.log("PullBetting proxy deployed to:", pullBetting.address);
+    const PoolBetting = await ethers.getContractFactory("PoolBetting");
+    poolBetting = await upgrades.deployProxy(PoolBetting, [wxDAI.address, oracle.address, FEE]);
+    console.log("PoolBetting proxy deployed to:", poolBetting.address);
     await timeout(TIME_OUT);
-    await pullBetting.deployed();
+    await poolBetting.deployed();
     await timeout(TIME_OUT);
-    pullBettingImpl = await upgrades.erc1967.getImplementationAddress(pullBetting.address);
-    await pullBettingImpl.initialize();
-    console.log("PullBetting deployed to:", pullBettingImpl);
+    poolBettingImpl = await upgrades.erc1967.getImplementationAddress(poolBetting.address);
+    await poolBettingImpl.initialize();
+    console.log("PoolBetting deployed to:", poolBettingImpl);
     console.log();
   }
 
   // settings
   {
     const approveAmount = tokens(999_999_999);
-    await wxDAI.approve(pullBetting.address, approveAmount);
+    await wxDAI.approve(poolBetting.address, approveAmount);
     await timeout(TIME_OUT);
     console.log("Approve done", approveAmount.toString());
     console.log();
@@ -74,7 +74,7 @@ async function main() {
     for (const iterator of Array(3).keys()) {
       oracleCondID++;
       await createCondition(
-        pullBetting,
+        poolBetting,
         oracle,
         oracleCondID,
         [oracleCondID, oracleCondID + 1],
@@ -97,7 +97,7 @@ async function main() {
     console.log();
 
     for (const iterator of ORACLES.keys()) {
-      await pullBetting.addOracle(ORACLES[iterator]);
+      await poolBetting.addOracle(ORACLES[iterator]);
       await timeout(TIME_OUT);
     }
     console.log("Oracles:", ORACLES);
@@ -106,7 +106,7 @@ async function main() {
   // verification
   if (chainId != 0x7a69) {
     await hre.run("verify:verify", {
-      address: pullBettingImpl,
+      address: poolBettingImpl,
       constructorArguments: [],
     });
   }

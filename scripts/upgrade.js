@@ -4,7 +4,7 @@ const { timeout } = require("../utils/utils");
 
 async function main() {
   const [deployer] = await ethers.getSigners();
-  const PullBettingAddr = process.env.CONTRACT_ADDRESS;
+  const PoolBettingAddr = process.env.CONTRACT_ADDRESS;
   const chainId = await hre.network.provider.send("eth_chainId");
   // hardhat => 800
   // kovan => 8000
@@ -16,20 +16,20 @@ async function main() {
   console.log("Deployer balance:", (await deployer.getBalance()).toString());
   console.log();
 
-  // PullBetting
-  const PullBetting = await ethers.getContractFactory("PullBetting");
-  const upgraded = await upgrades.upgradeProxy(PullBettingAddr, PullBetting);
-  console.log("PullBetting proxy upgraded at:", upgraded.address);
+  // PoolBetting
+  const PoolBetting = await ethers.getContractFactory("PoolBetting");
+  const upgraded = await upgrades.upgradeProxy(PoolBettingAddr, PoolBetting);
+  console.log("PoolBetting proxy upgraded at:", upgraded.address);
   await timeout(TIME_OUT);
-  PullBettingImpl = await upgrades.erc1967.getImplementationAddress(PullBettingAddr);
-  console.log("New PullBetting deployed to:  ", PullBettingImpl);
+  PoolBettingImpl = await upgrades.erc1967.getImplementationAddress(PoolBettingAddr);
+  console.log("New PoolBetting deployed to:  ", PoolBettingImpl);
 
   await timeout(TIME_OUT);
 
   // verify
   if (chainId != 0x7a69)
     await hre.run("verify:verify", {
-      address: PullBettingImpl,
+      address: PoolBettingImpl,
       constructorArguments: [],
     });
 }

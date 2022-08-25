@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.4;
 
-interface IPullBetting {
+interface IPoolBetting {
     enum ConditionState {
         CREATED,
         RESOLVED,

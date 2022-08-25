@@ -78,7 +78,7 @@ module.exports = {
   docgen: {
     path: "./docs",
     clear: false,
-    only: ["PullBetting"],
+    only: ["PoolBetting"],
     runOnCompile: true,
   },
 };

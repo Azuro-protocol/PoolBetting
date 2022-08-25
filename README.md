@@ -2,7 +2,7 @@
 
 ## Documentation
 
-- [Developer](https://htmlpreview.github.io/?https://github.com/Azuro-protocol/PullBetting/blob/main/docs/index.html#/)  
+- [Developer](https://htmlpreview.github.io/?https://github.com/Azuro-protocol/PoolBetting/blob/main/docs/index.html#/)  
 
 ## Usage
 ### Prerequisites
@@ -39,7 +39,7 @@ npm run node
    ```
    where **%network%** is name of network you would deploy your contract to.
 ### Upgrade contract
-1. Fill up **CONTRACT_ADDRESS** environment key with address of deployed PullBetting proxy.  
+1. Fill up **CONTRACT_ADDRESS** environment key with address of deployed PoolBetting proxy.  
 2. Run command:
    ```
    npm run upgrade %network%
@@ -50,14 +50,14 @@ npm run node
 ## Gnosis main network
 ### Contracts
 ```
-PullBetting  0xD4858C66b93FDa94b094D35963B613b7689bAE92
-Impl         0x96Dac265afe71a27d61B18fdea2C7766903155C3
+PoolBetting  0xEeb34b5B52422011459F81634Cd39aF33609e7aE
+Impl         0x0472274A079d4710c3B347aeb648FB6F1B1821Db
 ```
 
 ## Rinkeby test network
 ### Contracts
 ```
-PullBetting  0x5e74127D022A8471b9090B227A5aac534231BaA4
+PoolBetting  0x5e74127D022A8471b9090B227A5aac534231BaA4
 Impl         0xbCd45D027bDC3Af1d9916aebCd0a2fE506015b20
 USDT         0xfF20e2e5768C666e873EB355ee48Ad16cAC317ee
 ```

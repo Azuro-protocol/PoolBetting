@@ -1,5 +1,5 @@
 {
-  "name": "PullBetting",
+  "name": "PoolBetting",
   "version": "1.0.0",
   "description": "",
   "scripts": {
@@ -17,9 +17,9 @@
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Azuro-protocol/PullBetting/issues"
+    "url": "https://github.com/Azuro-protocol/PoolBetting/issues"
   },
-  "homepage": "https://github.com/Azuro-protocol/PullBetting#readme",
+  "homepage": "https://github.com/Azuro-protocol/PoolBetting#readme",
   "devDependencies": {
     "chai": "^4.3.6",
     "hardhat": "^2.9.9",

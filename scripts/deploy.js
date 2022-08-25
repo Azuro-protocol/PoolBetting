@@ -9,7 +9,7 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   const oracle = deployer;
 
-  let tokenAddress, pullBetting, pullBettingImpl;
+  let tokenAddress, poolBetting, poolBettingImpl;
 
   console.log("Deployer wallet: ", deployer.address);
   console.log("Deployer balance:", (await deployer.getBalance()).toString());
@@ -27,25 +27,25 @@ async function main() {
     tokenAddress = process.env.TOKEN_ADDRESS;
   }
 
-  // PullBetting
+  // PoolBetting
   {
-    const PullBetting = await ethers.getContractFactory("PullBetting");
-    pullBetting = await upgrades.deployProxy(PullBetting, [tokenAddress, oracle.address, FEE]);
-    console.log("PullBetting proxy deployed to:", pullBetting.address);
+    const PoolBetting = await ethers.getContractFactory("PoolBetting");
+    poolBetting = await upgrades.deployProxy(PoolBetting, [tokenAddress, oracle.address, FEE]);
+    console.log("PoolBetting proxy deployed to:", poolBetting.address);
     await timeout(TIME_OUT);
-    await pullBetting.deployed();
+    await poolBetting.deployed();
     await timeout(TIME_OUT);
-    pullBettingImplAddress = await upgrades.erc1967.getImplementationAddress(pullBetting.address);
-    const pullBettingImpl = await PullBetting.attach(pullBettingImplAddress);
-    await pullBettingImpl.initialize(ethers.Wallet.createRandom().address, ethers.constants.AddressZero, 0);
-    console.log("PullBetting deployed to:", pullBettingImplAddress);
+    poolBettingImplAddress = await upgrades.erc1967.getImplementationAddress(poolBetting.address);
+    const poolBettingImpl = await PoolBetting.attach(poolBettingImplAddress);
+    await poolBettingImpl.initialize(ethers.Wallet.createRandom().address, ethers.constants.AddressZero, 0);
+    console.log("PoolBetting deployed to:", poolBettingImplAddress);
     console.log();
   }
 
   // verification
   if (chainId != 0x7a69) {
     await hre.run("verify:verify", {
-      address: pullBettingImplAddress,
+      address: poolBettingImplAddress,
       constructorArguments: [],
     });
   }
