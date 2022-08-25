@@ -14,7 +14,6 @@ const {
 } = require("../utils/utils");
 
 const ORACLE_CONDITION_START = 1000000;
-const SCOPE_ID = 1;
 const FEE = 10 ** 6; // in decimals 10^9
 const IPFS = "dummy";
 const BET = tokens(100);
@@ -84,7 +83,6 @@ describe("TotoBetting test", function () {
           totoBetting,
           oracle,
           oracleCondId,
-          SCOPE_ID,
           [OUTCOMEWIN, OUTCOMELOSE],
           time + ONE_HOUR,
           IPFS
@@ -146,7 +144,6 @@ describe("TotoBetting test", function () {
           totoBetting,
           oracle,
           oracleCondId,
-          SCOPE_ID,
           [OUTCOMEWIN, OUTCOMELOSE],
           time + ONE_HOUR,
           IPFS
@@ -213,7 +210,6 @@ describe("TotoBetting test", function () {
             totoBetting,
             oracle,
             oracleCondId,
-            SCOPE_ID,
             [OUTCOMEWIN, OUTCOMELOSE],
             time + ONE_HOUR,
             IPFS
@@ -263,7 +259,6 @@ describe("TotoBetting test", function () {
           totoBetting,
           oracle,
           oracleCondId,
-          SCOPE_ID,
           [OUTCOMEWIN, OUTCOMELOSE],
           time + ONE_HOUR,
           IPFS
@@ -328,7 +323,6 @@ describe("TotoBetting test", function () {
           totoBetting,
           oracle,
           oracleCondId,
-          SCOPE_ID,
           [OUTCOMEWIN, OUTCOMELOSE],
           time + ONE_HOUR,
           IPFS
@@ -369,7 +363,6 @@ describe("TotoBetting test", function () {
           totoBetting,
           oracle,
           oracleCondId,
-          SCOPE_ID,
           [OUTCOMEWIN, OUTCOMELOSE],
           time + ONE_HOUR,
           IPFS
@@ -406,7 +399,6 @@ describe("TotoBetting test", function () {
         totoBetting,
         oracle,
         oracleCondId,
-        SCOPE_ID,
         [OUTCOMEWIN, OUTCOMELOSE],
         time + ONE_HOUR,
         IPFS
@@ -427,7 +419,6 @@ describe("TotoBetting test", function () {
         totoBetting,
         oracle,
         oracleCondId,
-        SCOPE_ID,
         [OUTCOMEWIN, OUTCOMELOSE],
         time + ONE_HOUR,
         IPFS
@@ -460,18 +451,10 @@ describe("TotoBetting test", function () {
       });
       it("Only oracle can interact with conditions", async () => {
         await expect(
-          createCondition(totoBetting, addr1, oracleCondId, SCOPE_ID, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS)
+          createCondition(totoBetting, addr1, oracleCondId, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS)
         ).to.be.revertedWith("OnlyOracle()");
 
-        await createCondition(
-          totoBetting,
-          oracle,
-          oracleCondId,
-          SCOPE_ID,
-          [OUTCOMEWIN, OUTCOMELOSE],
-          time + ONE_HOUR,
-          IPFS
-        );
+        await createCondition(totoBetting, oracle, oracleCondId, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
 
         await expect(totoBetting.connect(addr1).cancelCondition(oracleCondId)).to.be.revertedWith("OnlyOracle()");
         await expect(totoBetting.connect(addr1).resolveCondition(oracleCondId, OUTCOMEWIN)).to.be.revertedWith(
@@ -480,12 +463,12 @@ describe("TotoBetting test", function () {
       });
       it("Should NOT create conditions that will begin soon", async () => {
         await expect(
-          createCondition(totoBetting, oracle, oracleCondId, SCOPE_ID, [OUTCOMEWIN, OUTCOMELOSE], time + 1, IPFS)
+          createCondition(totoBetting, oracle, oracleCondId, [OUTCOMEWIN, OUTCOMELOSE], time + 1, IPFS)
         ).to.be.revertedWith("ConditionExpired()");
       });
       it("Should NOT create conditions with same outcomes", async () => {
         await expect(
-          createCondition(totoBetting, oracle, oracleCondId, SCOPE_ID, [OUTCOMEWIN, OUTCOMEWIN], time + ONE_HOUR, IPFS)
+          createCondition(totoBetting, oracle, oracleCondId, [OUTCOMEWIN, OUTCOMEWIN], time + ONE_HOUR, IPFS)
         ).to.be.revertedWith("SameOutcomes()");
       });
       it("Should NOT create duplicate", async () => {
@@ -493,22 +476,13 @@ describe("TotoBetting test", function () {
           totoBetting,
           oracle,
           oracleCondId,
-          SCOPE_ID,
           [OUTCOMEWIN, OUTCOMELOSE],
           time + ONE_HOUR,
           IPFS
         );
-        await createCondition(
-          totoBetting,
-          oracle2,
-          oracleCondId,
-          SCOPE_ID,
-          [OUTCOMEWIN, OUTCOMELOSE],
-          time + ONE_HOUR,
-          IPFS
-        );
+        await createCondition(totoBetting, oracle2, oracleCondId, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
         await expect(
-          createCondition(totoBetting, oracle, oracleCondId, SCOPE_ID, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS)
+          createCondition(totoBetting, oracle, oracleCondId, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS)
         ).to.be.revertedWith(`ConditionAlreadyCreated(${condIdHash})`);
       });
       it("Should NOT interact with nonexistent condition", async () => {
@@ -528,14 +502,13 @@ describe("TotoBetting test", function () {
           totoBetting,
           oracle,
           oracleCondId,
-          SCOPE_ID,
           [OUTCOMEWIN, OUTCOMELOSE],
           time + ONE_HOUR,
           IPFS
         );
 
         await expect(totoBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN)).to.be.revertedWith(
-          `ConditionNotYetStarted(${condIdHash})`
+          `ConditionNotStarted(${condIdHash})`
         );
       });
       it("Should NOT resolve canceled condition", async () => {
@@ -543,14 +516,13 @@ describe("TotoBetting test", function () {
           totoBetting,
           oracle,
           oracleCondId,
-          SCOPE_ID,
           [OUTCOMEWIN, OUTCOMELOSE],
           time + ONE_HOUR,
           IPFS
         );
 
         await expect(totoBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN)).to.be.revertedWith(
-          `ConditionNotYetStarted(${condIdHash})`
+          `ConditionNotStarted(${condIdHash})`
         );
       });
       it("Should NOT resolve condition before it starts", async () => {
@@ -558,14 +530,13 @@ describe("TotoBetting test", function () {
           totoBetting,
           oracle,
           oracleCondId,
-          SCOPE_ID,
           [OUTCOMEWIN, OUTCOMELOSE],
           time + ONE_HOUR,
           IPFS
         );
 
         await expect(totoBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN)).to.be.revertedWith(
-          `ConditionNotYetStarted(${condIdHash})`
+          `ConditionNotStarted(${condIdHash})`
         );
       });
       it("Should NOT resolve condition with no bets on one of the outcomes", async () => {
@@ -575,7 +546,6 @@ describe("TotoBetting test", function () {
             totoBetting,
             oracle,
             oracleCondId,
-            SCOPE_ID,
             [OUTCOMEWIN, OUTCOMELOSE],
             time + ONE_HOUR,
             IPFS
@@ -585,7 +555,7 @@ describe("TotoBetting test", function () {
 
           timeShift(time + ONE_HOUR);
           await expect(totoBetting.connect(oracle).resolveCondition(oracleCondId++, OUTCOMEWIN)).to.be.revertedWith(
-            `ConditionCanceled(${condIdHash})`
+            `ConditionCanceled_(${condIdHash})`
           );
         }
       });
@@ -594,7 +564,6 @@ describe("TotoBetting test", function () {
           totoBetting,
           oracle,
           oracleCondId,
-          SCOPE_ID,
           [OUTCOMEWIN, OUTCOMELOSE],
           time + ONE_HOUR,
           IPFS
@@ -613,7 +582,6 @@ describe("TotoBetting test", function () {
           totoBetting,
           oracle,
           oracleCondId,
-          SCOPE_ID,
           [OUTCOMEWIN, OUTCOMELOSE],
           time + ONE_HOUR,
           IPFS
@@ -633,7 +601,6 @@ describe("TotoBetting test", function () {
           totoBetting,
           oracle,
           oracleCondId,
-          SCOPE_ID,
           [OUTCOMEWIN, OUTCOMELOSE],
           time + ONE_HOUR,
           IPFS
@@ -645,7 +612,7 @@ describe("TotoBetting test", function () {
         await totoBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN);
 
         await expect(totoBetting.connect(oracle).cancelCondition(oracleCondId)).to.be.revertedWith(
-          `ConditionResolved(${condIdHash})`
+          `ConditionResolved_(${condIdHash})`
         );
       });
     });
@@ -657,7 +624,6 @@ describe("TotoBetting test", function () {
           totoBetting,
           oracle,
           oracleCondId,
-          SCOPE_ID,
           [OUTCOMEWIN, OUTCOMELOSE],
           time + ONE_HOUR,
           IPFS
@@ -677,7 +643,7 @@ describe("TotoBetting test", function () {
 
         timeShift(time + ONE_HOUR - 1);
         await expect(makeBet(totoBetting, bettor, condIdHash, OUTCOMELOSE, BET)).to.be.revertedWith(
-          `ConditionCanceled(${condIdHash})`
+          `ConditionCanceled_(${condIdHash})`
         );
       });
       it("Should NOT bet on canceled condition", async () => {
@@ -688,7 +654,7 @@ describe("TotoBetting test", function () {
         await totoBetting.connect(oracle).cancelCondition(oracleCondId);
 
         await expect(makeBet(totoBetting, bettor, condIdHash, OUTCOMEWIN, BET)).to.be.revertedWith(
-          `ConditionCanceled(${condIdHash})`
+          `ConditionCanceled_(${condIdHash})`
         );
       });
       it("Should NOT bet on incorrect outcome", async () => {
@@ -717,7 +683,6 @@ describe("TotoBetting test", function () {
           totoBetting,
           oracle,
           oracleCondId,
-          SCOPE_ID,
           [OUTCOMEWIN, OUTCOMELOSE],
           time + ONE_HOUR,
           IPFS

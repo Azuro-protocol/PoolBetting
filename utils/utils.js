@@ -22,10 +22,10 @@ const prepareStand = async (ethers, owner, oracle, oracle2, fee) => {
   return [totoBetting, wxDAI];
 };
 
-const createCondition = async (totoBetting, oracle, oracleCondId_, scopeId, outcomes, timestamp, ipfsHash) => {
+const createCondition = async (totoBetting, oracle, oracleCondId_, outcomes, timestamp, ipfsHash) => {
   const txCreate = await totoBetting
     .connect(oracle)
-    .createCondition(oracleCondId_, scopeId, outcomes, timestamp, ethers.utils.formatBytes32String(ipfsHash));
+    .createCondition(oracleCondId_, outcomes, timestamp, ethers.utils.formatBytes32String(ipfsHash));
   const conditionIdHash = await getConditionId_Hash(txCreate);
 
   return conditionIdHash;
@@ -39,14 +39,14 @@ const getConditionId_Hash = async (txCreateCondition) => {
 };
 
 const makeBet = async (totoBetting, bettor, conditionIdHash, outcome, amount) => {
-  let txBet = await totoBetting.connect(bettor).makeBet(conditionIdHash, outcome, amount);
+  let txBet = await totoBetting.connect(bettor).bet(conditionIdHash, outcome, amount);
   let betTokenId = await getTokenId(txBet);
 
   return betTokenId;
 };
 
 const makeBetNative = async (totoBetting, bettor, conditionIdHash, outcome, amount) => {
-  let txBet = await totoBetting.connect(bettor).makeBetNative(conditionIdHash, outcome, {
+  let txBet = await totoBetting.connect(bettor).betNative(conditionIdHash, outcome, {
     value: BigNumber.from(amount),
   });
   let betTokenId = await getTokenId(txBet);

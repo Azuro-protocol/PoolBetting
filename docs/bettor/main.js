@@ -7263,13 +7263,13 @@
             },
           },
           methods: {
-            "makeBet(uint256,uint64,uint128)": {
+            "bet(uint256,uint64,uint128)": {
               inputs: [
                 { internalType: "uint256", name: "conditionID_", type: "uint256" },
                 { internalType: "uint64", name: "outcome_", type: "uint64" },
                 { internalType: "uint128", name: "amount_", type: "uint128" },
               ],
-              name: "makeBet",
+              name: "bet",
               outputs: [],
               stateMutability: "nonpayable",
               type: "function",
