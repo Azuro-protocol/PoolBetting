@@ -6,13 +6,6 @@ const { tokens, timeout, getBlockTime, createCondition } = require("../utils/uti
 const FEE = 10000000; // 1%
 const EVENT_START_IN = 3600; // 1 hour
 
-const ORACLES = [
-  "0x0D62B886234EA4dC9bd86FaB239578DcD0075fb0",
-  "0x2c33fEe397eEA9a3573A31a2Ea926424E35584a1",
-  "0x628d2714F912aaB37e00304B5fF0283BE7DFf75f",
-  "0x834DD1699F7ed641b8FED8A57D1ad48A9B6Adb4E",
-];
-
 let TEST_WALLET = [];
 TEST_WALLET.push(process.env.TEST_WALLET1);
 TEST_WALLET.push(process.env.TEST_WALLET2);
@@ -20,9 +13,7 @@ TEST_WALLET.push(process.env.TEST_WALLET3);
 
 async function main() {
   const [deployer] = await ethers.getSigners();
-  const oracle = deployer;
 
-  let oracleCondID = 0;
   let wxDAI, poolBetting, poolBettingImpl, testWallet;
 
   console.log("Deployer wallet: ", deployer.address);
@@ -50,7 +41,7 @@ async function main() {
   // PoolBetting
   {
     const PoolBetting = await ethers.getContractFactory("PoolBetting");
-    poolBetting = await upgrades.deployProxy(PoolBetting, [wxDAI.address, oracle.address, FEE]);
+    poolBetting = await upgrades.deployProxy(PoolBetting, [wxDAI.address, FEE]);
     console.log("PoolBetting proxy deployed to:", poolBetting.address);
     await timeout(TIME_OUT);
     await poolBetting.deployed();
@@ -68,39 +59,6 @@ async function main() {
     await timeout(TIME_OUT);
     console.log("Approve done", approveAmount.toString());
     console.log();
-
-    time = await getBlockTime(ethers);
-
-    for (const iterator of Array(3).keys()) {
-      oracleCondID++;
-      await createCondition(
-        poolBetting,
-        oracle,
-        oracleCondID,
-        [oracleCondID, oracleCondID + 1],
-        time + EVENT_START_IN,
-        oracleCondID
-      );
-
-      await timeout(TIME_OUT);
-      console.log("Condition %s created", oracleCondID);
-    }
-    console.log();
-
-    for (const iterator of Array(3).keys()) {
-      testWallet = TEST_WALLET[iterator];
-      await wxDAI.connect(deployer).approve(testWallet, tokens(10_000_000));
-      await deployer.connect(wxDAI).transfer(testWallet, tokens(10_000_000));
-      await timeout(TIME_OUT);
-      console.log("10 000 000 wxDAI sent to %s", TEST_WALLET[iterator]);
-    }
-    console.log();
-
-    for (const iterator of ORACLES.keys()) {
-      await poolBetting.addOracle(ORACLES[iterator]);
-      await timeout(TIME_OUT);
-    }
-    console.log("Oracles:", ORACLES);
   }
 
   // verification

@@ -10,31 +10,19 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
 /// @title Azuro Totalizator
 contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
+    uint48 constant multiplier = 10**12;
+
+    mapping(uint256 => Condition) public conditions;
+    uint256 public lastConditionId;
+
     address public token;
-
-    uint128 public daoFee;
-    uint128 public DAOReward;
-
     /**
      * @notice The condition expires if during this time before it starts there were no bets on one of the outcomes.
      */
     uint64 public expireTimer;
 
-    uint48 constant multiplier = 10**12;
-
-    mapping(address => bool) public oracles;
-    mapping(address => mapping(uint256 => uint256)) public oracleCondIds; // oracle -> oracleConditionId -> conditionId
-
-    mapping(uint256 => Condition) public conditions;
-    uint256 public lastConditionId; // starts with 1
-
-    /**
-     * @notice Requires the function to be called only by oracle.
-     */
-    modifier onlyOracle() {
-        if (!oracles[msg.sender]) revert OnlyOracle();
-        _;
-    }
+    uint128 public daoFee;
+    uint128 public DAOReward;
 
     receive() external payable {
         assert(msg.sender == token); // only accept native tokens via fallback from the WETH contract
@@ -42,84 +30,57 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
 
     /**
      * @param  token_ address of the token used in bets and rewards
-     * @param  oracle oracle address
      * @param  fee bet fee in decimals 10^9
      */
-    function initialize(
-        address token_,
-        address oracle,
-        uint128 fee
-    ) external virtual initializer {
+    function initialize(address token_, uint128 fee)
+        external
+        virtual
+        initializer
+    {
         if (token_ == address(0)) revert WrongToken();
         if (fee >= multiplier) revert WrongFee();
 
         __Ownable_init();
         __ERC1155_init("Pool Betting");
         token = token_;
-        oracles[oracle] = true;
         expireTimer = 600;
         daoFee = fee;
     }
 
     /**
-     * @notice Indicate address `oracle` as oracle.
-     * @param  oracle new oracle address
-     */
-    function addOracle(address oracle) external onlyOwner {
-        oracles[oracle] = true;
-        emit OracleAdded(oracle);
-    }
-
-    /**
-     * @notice Do not consider address `oracle` a oracle anymore.
-     * @param  oracle address of oracle to renounce
-     */
-    function renounceOracle(address oracle) external onlyOwner {
-        oracles[oracle] = false;
-        emit OracleRenounced(oracle);
-    }
-
-    /**
-     * @notice Oracle: Provide information about current condition.
-     * @param  oracleCondId the current match or game id in oracle's internal system
+     * @notice Provide information about current condition.
      * @param  outcomes outcome ids for this condition [outcome 1, outcome 2]
      * @param  timestamp time when match starts and bets not allowed
      * @param  ipfsHash detailed info about match stored in IPFS
      */
     function createCondition(
-        uint256 oracleCondId,
         uint64[2] calldata outcomes,
         uint64 timestamp,
         bytes32 ipfsHash
-    ) external onlyOracle {
-        uint256 conditionId = oracleCondIds[msg.sender][oracleCondId];
-        if (conditionId != 0) revert ConditionAlreadyCreated(conditionId);
+    ) external {
         if (outcomes[0] == outcomes[1]) revert SameOutcomes();
         if (timestamp <= block.timestamp + expireTimer)
             revert ConditionExpired();
 
-        oracleCondIds[msg.sender][oracleCondId] = ++lastConditionId;
+        uint256 conditionId = ++lastConditionId;
 
-        Condition storage newCondition = conditions[lastConditionId];
+        Condition storage newCondition = conditions[conditionId];
+        newCondition.oracle = msg.sender;
         newCondition.outcomes = outcomes;
         newCondition.timestamp = timestamp;
         newCondition.ipfsHash = ipfsHash;
 
-        emit ConditionCreated(oracleCondId, lastConditionId, timestamp);
+        emit ConditionCreated(msg.sender, conditionId, timestamp);
     }
 
     /**
-     * @notice Oracle: Indicate outcome `outcomeWon` as happened in oracle's condition `oracleCondId`.
-     * @param  oracleCondId the match or game id in oracle's internal system
+     * @notice Oracle: Indicate outcome `outcomeWon` as happened in oracle's condition `conditionId`.
+     * @param  conditionId the match or game id
      * @param  outcomeWon id of happened outcome
      */
-    function resolveCondition(uint256 oracleCondId, uint64 outcomeWon)
-        external
-        onlyOracle
-    {
-        uint256 conditionId = oracleCondIds[msg.sender][oracleCondId];
-
+    function resolveCondition(uint256 conditionId, uint64 outcomeWon) external {
         Condition storage condition = getCondition(conditionId);
+        onlyOracle(condition);
 
         if (conditionIsCanceled(conditionId))
             revert ConditionCanceled_(conditionId);
@@ -137,7 +98,7 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
         condition.outcomeWon = outcomeWon;
         condition.state = ConditionState.RESOLVED;
 
-        emit ConditionResolved(oracleCondId, conditionId, outcomeWon);
+        emit ConditionResolved(conditionId, outcomeWon);
     }
 
     /**
@@ -151,14 +112,21 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
         returns (Condition storage)
     {
         Condition storage condition = conditions[conditionId];
-
         if (condition.timestamp == 0) revert ConditionNotExists(conditionId);
 
         return condition;
     }
 
     /**
-     * @notice Require the condition `conditionId` have outcome `outcome` as possible.
+     * @notice Throws if function was not called by oracle.
+     * @param  condition the match or game struct
+     */
+    function onlyOracle(Condition memory condition) internal view {
+        if (condition.oracle != msg.sender) revert OnlyOracle();
+    }
+
+    /**
+     * @notice Throws if the condition `conditionId` have not outcome `outcome` as possible.
      * @param  condition the match or game struct
      * @param  outcome outcome id
      */
@@ -172,12 +140,12 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
     }
 
     /**
-     * @notice  Oracle: Indicate the condition `oracleCondId` as canceled.
-     * @param   oracleCondId the current match or game id in oracle's internal system
+     * @notice  Oracle: Indicate the condition `conditionId` as canceled.
+     * @param   conditionId the current match or game id
      */
-    function cancelCondition(uint256 oracleCondId) external onlyOracle {
-        uint256 conditionId = oracleCondIds[msg.sender][oracleCondId];
+    function cancelCondition(uint256 conditionId) external {
         Condition storage condition = getCondition(conditionId);
+        onlyOracle(condition);
 
         if (condition.state == ConditionState.RESOLVED)
             revert ConditionResolved_(conditionId);
@@ -186,7 +154,7 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
 
         condition.state = ConditionState.CANCELED;
 
-        emit ConditionCanceled(oracleCondId, conditionId);
+        emit ConditionCanceled(conditionId);
     }
 
     /**
@@ -207,7 +175,7 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
         ) {
             condition.state = ConditionState.CANCELED;
 
-            emit ConditionCanceled(0, conditionId);
+            emit ConditionCanceled(conditionId);
 
             return true;
         }

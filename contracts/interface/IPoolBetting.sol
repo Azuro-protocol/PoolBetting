@@ -10,6 +10,7 @@ interface IPoolBetting {
     }
 
     struct Condition {
+        address oracle;
         bytes32 ipfsHash;
         uint128[2] totalNetBets;
         uint64[2] outcomes;
@@ -18,23 +19,13 @@ interface IPoolBetting {
         ConditionState state;
     }
 
-    event OracleAdded(address indexed newOracle);
-    event OracleRenounced(address indexed oracle);
-
     event ConditionCreated(
-        uint256 indexed oracleConditionId,
+        address indexed oracle,
         uint256 indexed conditionId,
         uint64 timestamp
     );
-    event ConditionResolved(
-        uint256 indexed oracleConditionId,
-        uint256 indexed conditionId,
-        uint64 outcomeWin
-    );
-    event ConditionCanceled(
-        uint256 indexed oracleConditionId,
-        uint256 indexed conditionId
-    );
+    event ConditionResolved(uint256 indexed conditionId, uint64 outcomeWin);
+    event ConditionCanceled(uint256 indexed conditionId);
 
     event NewBet(
         address indexed owner,
@@ -53,7 +44,6 @@ interface IPoolBetting {
     error ConditionExpired();
 
     error ConditionNotExists(uint256 conditionId);
-    error ConditionAlreadyCreated(uint256 conditionId);
     error ConditionNotStarted(uint256 conditionId);
     error ConditionStillOn(uint256 conditionId);
     error ConditionStarted(uint256 conditionId);

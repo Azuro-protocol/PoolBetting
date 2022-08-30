@@ -15,7 +15,6 @@ const {
 
 const MULTIPLIER = 10 ** 12;
 
-const ORACLE_CONDITION_START = 1000000;
 const FEE = MULTIPLIER * 0.01; // 1%
 const IPFS = "dummy";
 const BET = tokens(100);
@@ -46,29 +45,16 @@ const prepareBettors = async (poolBetting, wxDAI, n) => {
 describe("PoolBetting test", function () {
   let owner, oracle, oracle2, bettors, bettor, bettor2;
   let poolBetting, wxDAI;
-  let time, condIdHash;
-
-  let oracleCondId = ORACLE_CONDITION_START;
+  let time, conditionId;
 
   before(async () => {
     [owner, oracle, oracle2, addr1] = await ethers.getSigners();
 
-    [poolBetting, wxDAI] = await prepareStand(ethers, owner, oracle, oracle2, FEE);
+    [poolBetting, wxDAI] = await prepareStand(ethers, owner, FEE);
 
     bettors = await prepareBettors(poolBetting, wxDAI, MAX_BETTORS);
     bettor = bettors[0];
     bettor2 = bettors[1];
-  });
-  describe("Oracle test", function () {
-    it("Add and renounce oracle", async () => {
-      expect(await poolBetting.oracles(addr1.address)).to.be.equal(false);
-
-      await poolBetting.addOracle(addr1.address);
-      expect(await poolBetting.oracles(addr1.address)).to.be.equal(true);
-
-      await poolBetting.renounceOracle(addr1.address);
-      expect(await poolBetting.oracles(addr1.address)).to.be.equal(false);
-    });
   });
   describe("Betting test", function () {
     it("Withdraw reward", async () => {
@@ -79,16 +65,8 @@ describe("PoolBetting test", function () {
       let bettor, balance, bet, outcome, betToken;
 
       for (let i = 0; i < TRIES; i++) {
-        oracleCondId++;
         time = await getBlockTime(ethers);
-        condIdHash = await createCondition(
-          poolBetting,
-          oracle,
-          oracleCondId,
-          [OUTCOMEWIN, OUTCOMELOSE],
-          time + ONE_HOUR,
-          IPFS
-        );
+        conditionId = await createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
 
         nBettors = Math.floor(Math.random() * (MAX_BETTORS - MIN_BETTORS + 1) + MIN_BETTORS);
         totalNetBets = totalWinBets = BigNumber.from(0);
@@ -103,13 +81,13 @@ describe("PoolBetting test", function () {
           }
           bets[k] = bet;
 
-          betToken = await makeBet(poolBetting, bettor, condIdHash, outcome, bet);
+          betToken = await makeBet(poolBetting, bettor, conditionId, outcome, bet);
           expect(await poolBetting.balanceOf(bettor.address, betToken)).to.be.equal(bet);
           betTokens[k] = betToken;
         }
 
         timeShift(time + ONE_HOUR);
-        await poolBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN);
+        await poolBetting.connect(oracle).resolveCondition(conditionId, OUTCOMEWIN);
 
         for (let k = 0; k < nBettors; k++) {
           bettor = bettors[k];
@@ -140,16 +118,8 @@ describe("PoolBetting test", function () {
       let bettor, balance, bet, outcome, betToken;
 
       for (let i = 0; i < TRIES; i++) {
-        oracleCondId++;
         time = await getBlockTime(ethers);
-        condIdHash = await createCondition(
-          poolBetting,
-          oracle,
-          oracleCondId,
-          [OUTCOMEWIN, OUTCOMELOSE],
-          time + ONE_HOUR,
-          IPFS
-        );
+        conditionId = await createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
 
         nBettors = Math.floor(Math.random() * (MAX_BETTORS - MIN_BETTORS + 1) + MIN_BETTORS);
         totalNetBets = totalWinBets = BigNumber.from(0);
@@ -164,13 +134,13 @@ describe("PoolBetting test", function () {
           }
           bets[k] = bet;
 
-          betToken = await makeBet(poolBetting, bettor, condIdHash, outcome, bet);
+          betToken = await makeBet(poolBetting, bettor, conditionId, outcome, bet);
           expect(await poolBetting.balanceOf(bettor.address, betToken)).to.be.equal(bet);
           betTokens[k] = betToken;
         }
 
         timeShift(time + ONE_HOUR);
-        await poolBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN);
+        await poolBetting.connect(oracle).resolveCondition(conditionId, OUTCOMEWIN);
 
         for (let k = 0; k < nBettors; k++) {
           bettor = bettors[k];
@@ -206,30 +176,22 @@ describe("PoolBetting test", function () {
         reward = BigNumber.from(0);
 
         for (let k = 0; k < nConditions; k++) {
-          oracleCondId++;
           time = await getBlockTime(ethers);
-          condIdHash = await createCondition(
-            poolBetting,
-            oracle,
-            oracleCondId,
-            [OUTCOMEWIN, OUTCOMELOSE],
-            time + ONE_HOUR,
-            IPFS
-          );
+          conditionId = await createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
 
-          winTokens[k] = await makeBet(poolBetting, bettor2, condIdHash, OUTCOMEWIN, BET);
-          await makeBet(poolBetting, bettor2, condIdHash, OUTCOMELOSE, BET);
+          winTokens[k] = await makeBet(poolBetting, bettor2, conditionId, OUTCOMEWIN, BET);
+          await makeBet(poolBetting, bettor2, conditionId, OUTCOMELOSE, BET);
 
           outcome = k == 0 ? OUTCOMEWIN : k == 1 ? OUTCOMELOSE : Math.random() > 1 / 2 ? OUTCOMEWIN : OUTCOMELOSE;
           bet = randomTokens(2);
           bets[k] = bet;
 
-          betToken = await makeBet(poolBetting, bettor, condIdHash, outcome, bet);
+          betToken = await makeBet(poolBetting, bettor, conditionId, outcome, bet);
           expect(await poolBetting.balanceOf(bettor.address, betToken)).to.be.equal(bet);
           betTokens[k] = betToken;
 
           timeShift(time + ONE_HOUR);
-          await poolBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN);
+          await poolBetting.connect(oracle).resolveCondition(conditionId, OUTCOMEWIN);
         }
 
         balance = await wxDAI.balanceOf(bettor.address);
@@ -255,16 +217,8 @@ describe("PoolBetting test", function () {
       let txWithdraw, usedGas;
 
       for (let i = 0; i < TRIES; i++) {
-        oracleCondId++;
         time = await getBlockTime(ethers);
-        condIdHash = await createCondition(
-          poolBetting,
-          oracle,
-          oracleCondId,
-          [OUTCOMEWIN, OUTCOMELOSE],
-          time + ONE_HOUR,
-          IPFS
-        );
+        conditionId = await createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
 
         nBettors = Math.floor(Math.random() * (MAX_BETTORS - MIN_BETTORS + 1) + MIN_BETTORS);
         totalNetBets = totalWinBets = BigNumber.from(0);
@@ -279,13 +233,13 @@ describe("PoolBetting test", function () {
           }
           bets[k] = bet;
 
-          betToken = await makeBetNative(poolBetting, bettor, condIdHash, outcome, bet);
+          betToken = await makeBetNative(poolBetting, bettor, conditionId, outcome, bet);
           expect(await poolBetting.balanceOf(bettor.address, betToken)).to.be.equal(bet);
           betTokens[k] = betToken;
         }
 
         timeShift(time + ONE_HOUR);
-        await poolBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN);
+        await poolBetting.connect(oracle).resolveCondition(conditionId, OUTCOMEWIN);
 
         for (let k = 0; k < nBettors; k++) {
           bettor = bettors[k];
@@ -319,16 +273,8 @@ describe("PoolBetting test", function () {
       let bet, outcome;
 
       for (let i = 0; i < TRIES; i++) {
-        oracleCondId++;
         time = await getBlockTime(ethers);
-        condIdHash = await createCondition(
-          poolBetting,
-          oracle,
-          oracleCondId,
-          [OUTCOMEWIN, OUTCOMELOSE],
-          time + ONE_HOUR,
-          IPFS
-        );
+        conditionId = await createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
 
         nBettors = Math.floor(Math.random() * (MAX_BETTORS - MIN_BETTORS + 1) + MIN_BETTORS);
 
@@ -338,10 +284,10 @@ describe("PoolBetting test", function () {
           bets[k] = bet;
           balances[k] = await wxDAI.balanceOf(bettors[k].address);
 
-          betTokens[k] = await makeBet(poolBetting, bettors[k], condIdHash, outcome, bet);
+          betTokens[k] = await makeBet(poolBetting, bettors[k], conditionId, outcome, bet);
         }
 
-        await poolBetting.connect(oracle).cancelCondition(oracleCondId);
+        await poolBetting.connect(oracle).cancelCondition(conditionId);
 
         for (let k = 0; k < nBettors; k++) {
           await poolBetting.connect(bettors[k]).withdrawPayout([betTokens[k]]);
@@ -359,16 +305,8 @@ describe("PoolBetting test", function () {
         outcome = OUTCOMEWIN;
 
       for (let i = 0; i < TRIES; i++) {
-        oracleCondId++;
         time = await getBlockTime(ethers);
-        condIdHash = await createCondition(
-          poolBetting,
-          oracle,
-          oracleCondId,
-          [OUTCOMEWIN, OUTCOMELOSE],
-          time + ONE_HOUR,
-          IPFS
-        );
+        conditionId = await createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
 
         nBettors = Math.floor(Math.random() * (MAX_BETTORS - MIN_BETTORS + 1) + MIN_BETTORS);
 
@@ -377,7 +315,7 @@ describe("PoolBetting test", function () {
           bets[k] = bet;
           balances[k] = await wxDAI.balanceOf(bettors[k].address);
 
-          betToken = await makeBet(poolBetting, bettors[k], condIdHash, outcome, bet);
+          betToken = await makeBet(poolBetting, bettors[k], conditionId, outcome, bet);
         }
 
         timeShift(time + ONE_HOUR);
@@ -395,41 +333,25 @@ describe("PoolBetting test", function () {
       await poolBetting.connect(owner).claimDAOReward();
       const balance = await wxDAI.balanceOf(owner.address);
 
-      oracleCondId++;
       let time = await getBlockTime(ethers);
-      let condIdHash = await createCondition(
-        poolBetting,
-        oracle,
-        oracleCondId,
-        [OUTCOMEWIN, OUTCOMELOSE],
-        time + ONE_HOUR,
-        IPFS
-      );
+      let conditionId = await createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
 
-      let tokenWin = await makeBet(poolBetting, bettor, condIdHash, OUTCOMEWIN, tokens(100));
-      let tokenLose = await makeBet(poolBetting, bettor, condIdHash, OUTCOMELOSE, tokens(200));
+      let tokenWin = await makeBet(poolBetting, bettor, conditionId, OUTCOMEWIN, tokens(100));
+      let tokenLose = await makeBet(poolBetting, bettor, conditionId, OUTCOMELOSE, tokens(200));
 
       timeShift(time + ONE_HOUR);
-      await poolBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN);
+      await poolBetting.connect(oracle).resolveCondition(conditionId, OUTCOMEWIN);
 
       await poolBetting.connect(bettor).withdrawPayout([tokenWin]);
       await poolBetting.connect(bettor).withdrawPayout([tokenLose]);
 
-      oracleCondId++;
       time = await getBlockTime(ethers);
-      condIdHash = await createCondition(
-        poolBetting,
-        oracle,
-        oracleCondId,
-        [OUTCOMEWIN, OUTCOMELOSE],
-        time + ONE_HOUR,
-        IPFS
-      );
+      conditionId = await createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
 
-      tokenWin = await makeBet(poolBetting, bettor, condIdHash, OUTCOMEWIN, tokens(400));
-      tokenLose = await makeBet(poolBetting, bettor, condIdHash, OUTCOMELOSE, tokens(800));
+      tokenWin = await makeBet(poolBetting, bettor, conditionId, OUTCOMEWIN, tokens(400));
+      tokenLose = await makeBet(poolBetting, bettor, conditionId, OUTCOMELOSE, tokens(800));
 
-      await poolBetting.connect(oracle).cancelCondition(oracleCondId);
+      await poolBetting.connect(oracle).cancelCondition(conditionId);
 
       await poolBetting.connect(bettor).withdrawPayout([tokenWin]);
       await poolBetting.connect(bettor).withdrawPayout([tokenLose]);
@@ -444,271 +366,187 @@ describe("PoolBetting test", function () {
   describe("Check restrictions", async function () {
     describe("Conditions", async function () {
       beforeEach(async function () {
-        oracleCondId++;
         time = await getBlockTime(ethers);
       });
-      it("Only oracle can interact with conditions", async () => {
-        await expect(
-          createCondition(poolBetting, addr1, oracleCondId, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS)
-        ).to.be.revertedWith("OnlyOracle()");
+      it("Only condition creator can resolve it", async () => {
+        await createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
 
-        await createCondition(poolBetting, oracle, oracleCondId, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
-
-        await expect(poolBetting.connect(addr1).cancelCondition(oracleCondId)).to.be.revertedWith("OnlyOracle()");
-        await expect(poolBetting.connect(addr1).resolveCondition(oracleCondId, OUTCOMEWIN)).to.be.revertedWith(
+        await expect(poolBetting.connect(addr1).cancelCondition(conditionId)).to.be.revertedWith("OnlyOracle()");
+        await expect(poolBetting.connect(addr1).resolveCondition(conditionId, OUTCOMEWIN)).to.be.revertedWith(
           "OnlyOracle()"
         );
       });
       it("Should NOT create conditions that will begin soon", async () => {
         await expect(
-          createCondition(poolBetting, oracle, oracleCondId, [OUTCOMEWIN, OUTCOMELOSE], time + 1, IPFS)
+          createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMELOSE], time + 1, IPFS)
         ).to.be.revertedWith("ConditionExpired()");
       });
       it("Should NOT create conditions with same outcomes", async () => {
         await expect(
-          createCondition(poolBetting, oracle, oracleCondId, [OUTCOMEWIN, OUTCOMEWIN], time + ONE_HOUR, IPFS)
+          createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMEWIN], time + ONE_HOUR, IPFS)
         ).to.be.revertedWith("SameOutcomes()");
-      });
-      it("Should NOT create duplicate", async () => {
-        condIdHash = await createCondition(
-          poolBetting,
-          oracle,
-          oracleCondId,
-          [OUTCOMEWIN, OUTCOMELOSE],
-          time + ONE_HOUR,
-          IPFS
-        );
-        await createCondition(poolBetting, oracle2, oracleCondId, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
-        await expect(
-          createCondition(poolBetting, oracle, oracleCondId, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS)
-        ).to.be.revertedWith(`ConditionAlreadyCreated(${condIdHash})`);
       });
       it("Should NOT interact with nonexistent condition", async () => {
         const condIdNotExists = 2000000;
         await expect(makeBet(poolBetting, bettor, condIdNotExists, OUTCOMEWIN, BET)).to.be.revertedWith(
           `ConditionNotExists(${condIdNotExists})`
         );
-        await expect(poolBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN)).to.be.revertedWith(
-          `ConditionNotExists(0)`
+        await expect(poolBetting.connect(oracle).resolveCondition(condIdNotExists, OUTCOMEWIN)).to.be.revertedWith(
+          `ConditionNotExists(${condIdNotExists})`
         );
-        await expect(poolBetting.connect(oracle).cancelCondition(oracleCondId)).to.be.revertedWith(
-          `ConditionNotExists(0)`
+        await expect(poolBetting.connect(oracle).cancelCondition(condIdNotExists)).to.be.revertedWith(
+          `ConditionNotExists(${condIdNotExists})`
         );
       });
       it("Should NOT resolve condition before it starts", async () => {
-        let condIdHash = await createCondition(
-          poolBetting,
-          oracle,
-          oracleCondId,
-          [OUTCOMEWIN, OUTCOMELOSE],
-          time + ONE_HOUR,
-          IPFS
-        );
+        let conditionId = await createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
 
-        await expect(poolBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN)).to.be.revertedWith(
-          `ConditionNotStarted(${condIdHash})`
+        await expect(poolBetting.connect(oracle).resolveCondition(conditionId, OUTCOMEWIN)).to.be.revertedWith(
+          `ConditionNotStarted(${conditionId})`
         );
       });
       it("Should NOT resolve canceled condition", async () => {
-        let condIdHash = await createCondition(
-          poolBetting,
-          oracle,
-          oracleCondId,
-          [OUTCOMEWIN, OUTCOMELOSE],
-          time + ONE_HOUR,
-          IPFS
-        );
+        let conditionId = await createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
 
-        await expect(poolBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN)).to.be.revertedWith(
-          `ConditionNotStarted(${condIdHash})`
+        await expect(poolBetting.connect(oracle).resolveCondition(conditionId, OUTCOMEWIN)).to.be.revertedWith(
+          `ConditionNotStarted(${conditionId})`
         );
       });
       it("Should NOT resolve condition before it starts", async () => {
-        let condIdHash = await createCondition(
-          poolBetting,
-          oracle,
-          oracleCondId,
-          [OUTCOMEWIN, OUTCOMELOSE],
-          time + ONE_HOUR,
-          IPFS
-        );
+        let conditionId = await createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
 
-        await expect(poolBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN)).to.be.revertedWith(
-          `ConditionNotStarted(${condIdHash})`
+        await expect(poolBetting.connect(oracle).resolveCondition(conditionId, OUTCOMEWIN)).to.be.revertedWith(
+          `ConditionNotStarted(${conditionId})`
         );
       });
       it("Should NOT resolve condition with no bets on one of the outcomes", async () => {
         for (const outcome of [OUTCOMEWIN, OUTCOMELOSE]) {
           time = await getBlockTime(ethers);
-          condIdHash = await createCondition(
-            poolBetting,
-            oracle,
-            oracleCondId,
-            [OUTCOMEWIN, OUTCOMELOSE],
-            time + ONE_HOUR,
-            IPFS
-          );
+          conditionId = await createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
 
-          await makeBet(poolBetting, bettor, condIdHash, outcome, BET);
+          await makeBet(poolBetting, bettor, conditionId, outcome, BET);
 
           timeShift(time + ONE_HOUR);
-          await expect(poolBetting.connect(oracle).resolveCondition(oracleCondId++, OUTCOMEWIN)).to.be.revertedWith(
-            `ConditionCanceled_(${condIdHash})`
+          await expect(poolBetting.connect(oracle).resolveCondition(conditionId, OUTCOMEWIN)).to.be.revertedWith(
+            `ConditionCanceled_(${conditionId++})`
           );
         }
       });
       it("Should NOT resolve condition with incorrect outcome", async () => {
-        condIdHash = await createCondition(
-          poolBetting,
-          oracle,
-          oracleCondId,
-          [OUTCOMEWIN, OUTCOMELOSE],
-          time + ONE_HOUR,
-          IPFS
-        );
+        conditionId = await createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
 
-        await makeBet(poolBetting, bettor, condIdHash, OUTCOMEWIN, BET);
-        await makeBet(poolBetting, bettor, condIdHash, OUTCOMELOSE, BET);
+        await makeBet(poolBetting, bettor, conditionId, OUTCOMEWIN, BET);
+        await makeBet(poolBetting, bettor, conditionId, OUTCOMELOSE, BET);
 
         timeShift(time + ONE_HOUR);
-        await expect(poolBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEINCORRECT)).to.be.revertedWith(
+        await expect(poolBetting.connect(oracle).resolveCondition(conditionId, OUTCOMEINCORRECT)).to.be.revertedWith(
           "WrongOutcome()"
         );
       });
       it("Should NOT resolve condition twice", async () => {
-        condIdHash = await createCondition(
-          poolBetting,
-          oracle,
-          oracleCondId,
-          [OUTCOMEWIN, OUTCOMELOSE],
-          time + ONE_HOUR,
-          IPFS
-        );
-        await makeBet(poolBetting, bettor, condIdHash, OUTCOMEWIN, BET);
-        await makeBet(poolBetting, bettor, condIdHash, OUTCOMELOSE, BET);
+        conditionId = await createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
+        await makeBet(poolBetting, bettor, conditionId, OUTCOMEWIN, BET);
+        await makeBet(poolBetting, bettor, conditionId, OUTCOMELOSE, BET);
 
         timeShift(time + ONE_HOUR);
-        await poolBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN);
+        await poolBetting.connect(oracle).resolveCondition(conditionId, OUTCOMEWIN);
 
-        await expect(poolBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN)).to.be.revertedWith(
-          `ConditionAlreadyResolved(${condIdHash})`
+        await expect(poolBetting.connect(oracle).resolveCondition(conditionId, OUTCOMEWIN)).to.be.revertedWith(
+          `ConditionAlreadyResolved(${conditionId})`
         );
       });
       it("Should NOT cancel resolved condition", async () => {
-        condIdHash = await createCondition(
-          poolBetting,
-          oracle,
-          oracleCondId,
-          [OUTCOMEWIN, OUTCOMELOSE],
-          time + ONE_HOUR,
-          IPFS
-        );
-        await makeBet(poolBetting, bettor, condIdHash, OUTCOMEWIN, BET);
-        await makeBet(poolBetting, bettor, condIdHash, OUTCOMELOSE, BET);
+        conditionId = await createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
+        await makeBet(poolBetting, bettor, conditionId, OUTCOMEWIN, BET);
+        await makeBet(poolBetting, bettor, conditionId, OUTCOMELOSE, BET);
 
         timeShift(time + ONE_HOUR);
-        await poolBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN);
+        await poolBetting.connect(oracle).resolveCondition(conditionId, OUTCOMEWIN);
 
-        await expect(poolBetting.connect(oracle).cancelCondition(oracleCondId)).to.be.revertedWith(
-          `ConditionResolved_(${condIdHash})`
+        await expect(poolBetting.connect(oracle).cancelCondition(conditionId)).to.be.revertedWith(
+          `ConditionResolved_(${conditionId})`
         );
       });
     });
     describe("Bets", async function () {
       beforeEach(async function () {
-        oracleCondId++;
         time = await getBlockTime(ethers);
-        condIdHash = await createCondition(
-          poolBetting,
-          oracle,
-          oracleCondId,
-          [OUTCOMEWIN, OUTCOMELOSE],
-          time + ONE_HOUR,
-          IPFS
-        );
+        conditionId = await createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
       });
       it("Should NOT bet on started condition", async () => {
-        await makeBet(poolBetting, bettor, condIdHash, OUTCOMEWIN, BET);
-        await makeBet(poolBetting, bettor, condIdHash, OUTCOMELOSE, BET);
+        await makeBet(poolBetting, bettor, conditionId, OUTCOMEWIN, BET);
+        await makeBet(poolBetting, bettor, conditionId, OUTCOMELOSE, BET);
 
         timeShift(time + ONE_HOUR);
-        await expect(makeBet(poolBetting, bettor, condIdHash, OUTCOMELOSE, BET)).to.be.revertedWith(
-          `ConditionStarted(${condIdHash})`
+        await expect(makeBet(poolBetting, bettor, conditionId, OUTCOMELOSE, BET)).to.be.revertedWith(
+          `ConditionStarted(${conditionId})`
         );
       });
       it("Should NOT bet on condition that will begin soon if there are no bets on on of the outcomes", async () => {
-        await makeBet(poolBetting, bettor, condIdHash, OUTCOMEWIN, BET);
+        await makeBet(poolBetting, bettor, conditionId, OUTCOMEWIN, BET);
 
         timeShift(time + ONE_HOUR - 1);
-        await expect(makeBet(poolBetting, bettor, condIdHash, OUTCOMELOSE, BET)).to.be.revertedWith(
-          `ConditionCanceled_(${condIdHash})`
+        await expect(makeBet(poolBetting, bettor, conditionId, OUTCOMELOSE, BET)).to.be.revertedWith(
+          `ConditionCanceled_(${conditionId})`
         );
       });
       it("Should NOT bet on canceled condition", async () => {
-        await makeBet(poolBetting, bettor, condIdHash, OUTCOMEWIN, BET);
-        await makeBet(poolBetting, bettor, condIdHash, OUTCOMELOSE, BET);
+        await makeBet(poolBetting, bettor, conditionId, OUTCOMEWIN, BET);
+        await makeBet(poolBetting, bettor, conditionId, OUTCOMELOSE, BET);
 
         timeShift(time + ONE_HOUR);
-        await poolBetting.connect(oracle).cancelCondition(oracleCondId);
+        await poolBetting.connect(oracle).cancelCondition(conditionId);
 
-        await expect(makeBet(poolBetting, bettor, condIdHash, OUTCOMEWIN, BET)).to.be.revertedWith(
-          `ConditionCanceled_(${condIdHash})`
+        await expect(makeBet(poolBetting, bettor, conditionId, OUTCOMEWIN, BET)).to.be.revertedWith(
+          `ConditionCanceled_(${conditionId})`
         );
       });
       it("Should NOT bet on incorrect outcome", async () => {
-        await expect(makeBet(poolBetting, bettor, condIdHash, OUTCOMEINCORRECT, BET)).to.be.revertedWith(
+        await expect(makeBet(poolBetting, bettor, conditionId, OUTCOMEINCORRECT, BET)).to.be.revertedWith(
           "WrongOutcome()"
         );
       });
       it("Should NOT bet with no amount", async () => {
-        await expect(makeBet(poolBetting, bettor, condIdHash, OUTCOMEWIN, 0)).to.be.revertedWith(
+        await expect(makeBet(poolBetting, bettor, conditionId, OUTCOMEWIN, 0)).to.be.revertedWith(
           "AmountMustNotBeZero()"
         );
       });
       it("Should NOT bet with insufficient balance", async () => {
         const balance = await wxDAI.balanceOf(bettor.address);
-        await expect(makeBet(poolBetting, addr1, condIdHash, OUTCOMEWIN, balance.add(1))).to.be.revertedWith(
+        await expect(makeBet(poolBetting, addr1, conditionId, OUTCOMEWIN, balance.add(1))).to.be.revertedWith(
           "transferFrom failed"
         );
       });
     });
     describe("Payouts", async function () {
-      let tokenWin, tokenLose, balance;
+      let tokenWin, balance;
       beforeEach(async function () {
-        oracleCondId++;
         time = await getBlockTime(ethers);
-        condIdHash = await createCondition(
-          poolBetting,
-          oracle,
-          oracleCondId,
-          [OUTCOMEWIN, OUTCOMELOSE],
-          time + ONE_HOUR,
-          IPFS
-        );
+        conditionId = await createCondition(poolBetting, oracle, [OUTCOMEWIN, OUTCOMELOSE], time + ONE_HOUR, IPFS);
       });
       it("Should NOT reward in case of lose", async () => {
-        tokenWin = await makeBet(poolBetting, bettor, condIdHash, OUTCOMELOSE, BET);
-        await makeBet(poolBetting, bettor2, condIdHash, OUTCOMEWIN, BET);
+        tokenWin = await makeBet(poolBetting, bettor, conditionId, OUTCOMELOSE, BET);
+        await makeBet(poolBetting, bettor2, conditionId, OUTCOMEWIN, BET);
         balance = await wxDAI.balanceOf(bettor.address);
 
         timeShift(time + ONE_HOUR);
-        poolBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN);
+        poolBetting.connect(oracle).resolveCondition(conditionId, OUTCOMEWIN);
 
         await poolBetting.connect(bettor).withdrawPayout([tokenWin]);
         expect(await wxDAI.balanceOf(bettor.address)).to.be.equal(balance);
       });
       it("Should NOT reward before condition ends", async () => {
-        tokenWin = await makeBet(poolBetting, bettor, condIdHash, OUTCOMEWIN, BET);
+        tokenWin = await makeBet(poolBetting, bettor, conditionId, OUTCOMEWIN, BET);
         await expect(poolBetting.connect(bettor).withdrawPayout([tokenWin])).to.be.revertedWith(
-          `ConditionStillOn(${condIdHash})`
+          `ConditionStillOn(${conditionId})`
         );
       });
       it("Should NOT reward with zero bet token balance", async () => {
-        tokenWin = await makeBet(poolBetting, bettor, condIdHash, OUTCOMEWIN, BET);
-        await makeBet(poolBetting, bettor, condIdHash, OUTCOMELOSE, BET);
+        tokenWin = await makeBet(poolBetting, bettor, conditionId, OUTCOMEWIN, BET);
+        await makeBet(poolBetting, bettor, conditionId, OUTCOMELOSE, BET);
 
         timeShift(time + ONE_HOUR);
-        await poolBetting.connect(oracle).resolveCondition(oracleCondId, OUTCOMEWIN);
+        await poolBetting.connect(oracle).resolveCondition(conditionId, OUTCOMEWIN);
 
         await expect(poolBetting.connect(bettor2).withdrawPayout([tokenWin])).to.be.revertedWith(
           `ZeroBalance(${tokenWin})`

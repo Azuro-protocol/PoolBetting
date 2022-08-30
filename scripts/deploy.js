@@ -7,9 +7,8 @@ const FEE = MULTIPLIER * 0.01; // 1%
 
 async function main() {
   const [deployer] = await ethers.getSigners();
-  const oracle = deployer;
 
-  let tokenAddress, poolBetting, poolBettingImpl;
+  let tokenAddress, poolBetting;
 
   console.log("Deployer wallet: ", deployer.address);
   console.log("Deployer balance:", (await deployer.getBalance()).toString());
@@ -30,7 +29,7 @@ async function main() {
   // PoolBetting
   {
     const PoolBetting = await ethers.getContractFactory("PoolBetting");
-    poolBetting = await upgrades.deployProxy(PoolBetting, [tokenAddress, oracle.address, FEE]);
+    poolBetting = await upgrades.deployProxy(PoolBetting, [tokenAddress, FEE]);
     console.log("PoolBetting proxy deployed to:", poolBetting.address);
     await timeout(TIME_OUT);
     await poolBetting.deployed();
