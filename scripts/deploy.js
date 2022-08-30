@@ -36,7 +36,7 @@ async function main() {
     await timeout(TIME_OUT);
     poolBettingImplAddress = await upgrades.erc1967.getImplementationAddress(poolBetting.address);
     const poolBettingImpl = await PoolBetting.attach(poolBettingImplAddress);
-    await poolBettingImpl.initialize(ethers.Wallet.createRandom().address, ethers.constants.AddressZero, 0);
+    await poolBettingImpl.initialize(ethers.Wallet.createRandom().address, 0);
     console.log("PoolBetting deployed to:", poolBettingImplAddress);
     console.log();
   }
