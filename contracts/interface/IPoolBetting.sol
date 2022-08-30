@@ -19,6 +19,8 @@ interface IPoolBetting {
         ConditionState state;
     }
 
+    event BettorWon(address indexed bettor, uint256[] tokenId, uint128 amount);
+
     event ConditionCreated(
         address indexed oracle,
         uint256 indexed conditionId,

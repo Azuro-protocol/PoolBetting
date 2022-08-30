@@ -74,91 +74,12 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
     }
 
     /**
-     * @notice Oracle: Indicate outcome `outcomeWon` as happened in oracle's condition `conditionId`.
-     * @param  conditionId the match or game id
-     * @param  outcomeWon id of happened outcome
-     */
-    function resolveCondition(uint256 conditionId, uint64 outcomeWon) external {
-        Condition storage condition = _getCondition(conditionId);
-        onlyOracle(condition);
-
-        if (conditionIsCanceled(conditionId))
-            revert ConditionCanceled_(conditionId);
-        if (condition.state != ConditionState.CREATED)
-            revert ConditionAlreadyResolved(conditionId);
-        if (block.timestamp < condition.timestamp)
-            revert ConditionNotStarted(conditionId);
-
-        outcomeIsCorrect(condition, outcomeWon);
-
-        DAOReward +=
-            ((condition.totalNetBets[0] + condition.totalNetBets[1]) * daoFee) /
-            multiplier;
-
-        condition.outcomeWon = outcomeWon;
-        condition.state = ConditionState.RESOLVED;
-
-        emit ConditionResolved(conditionId, outcomeWon);
-    }
-
-    /**
-     * @notice Get condition with id `conditionId`.
-     * @param  conditionId the match or game id
-     * @return the match or game struct
-     */
-    function getCondition(uint256 conditionId)
-        external
-        view
-        returns (Condition memory)
-    {
-        return _getCondition(conditionId);
-    }
-
-    /**
-     * @notice Get condition with id `conditionId`.
-     * @param  conditionId the match or game id
-     * @return the match or game struct
-     */
-    function _getCondition(uint256 conditionId)
-        internal
-        view
-        returns (Condition storage)
-    {
-        Condition storage condition = conditions[conditionId];
-        if (condition.timestamp == 0) revert ConditionNotExists(conditionId);
-
-        return condition;
-    }
-
-    /**
-     * @notice Throws if function was not called by oracle.
-     * @param  condition the match or game struct
-     */
-    function onlyOracle(Condition memory condition) internal view {
-        if (condition.oracle != msg.sender) revert OnlyOracle();
-    }
-
-    /**
-     * @notice Throws if the condition `conditionId` have not outcome `outcome` as possible.
-     * @param  condition the match or game struct
-     * @param  outcome outcome id
-     */
-    function outcomeIsCorrect(Condition memory condition, uint64 outcome)
-        internal
-        pure
-    {
-        if (
-            outcome != condition.outcomes[0] && outcome != condition.outcomes[1]
-        ) revert WrongOutcome();
-    }
-
-    /**
      * @notice  Oracle: Indicate the condition `conditionId` as canceled.
      * @param   conditionId the current match or game id
      */
     function cancelCondition(uint256 conditionId) external {
         Condition storage condition = _getCondition(conditionId);
-        onlyOracle(condition);
+        _onlyOracle(condition);
 
         if (condition.state == ConditionState.RESOLVED)
             revert ConditionResolved_(conditionId);
@@ -171,28 +92,31 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
     }
 
     /**
-     * @notice Check if the condition `conditionId` is canceled.
-     * @dev    Previously cancel the condition if during `expireTime` sec before it starts there are no bets on one of the outcomes.
+     * @notice Oracle: Indicate outcome `outcomeWon` as happened in oracle's condition `conditionId`.
      * @param  conditionId the match or game id
-     * @return true if the condition is canceled else false
+     * @param  outcomeWon id of happened outcome
      */
-    function conditionIsCanceled(uint256 conditionId) internal returns (bool) {
+    function resolveCondition(uint256 conditionId, uint64 outcomeWon) external {
         Condition storage condition = _getCondition(conditionId);
+        _onlyOracle(condition);
 
-        if (condition.state == ConditionState.CANCELED) {
-            return true;
-        }
-        if (
-            (block.timestamp + expireTimer >= condition.timestamp) &&
-            (condition.totalNetBets[0] == 0 || condition.totalNetBets[1] == 0)
-        ) {
-            condition.state = ConditionState.CANCELED;
+        if (_isConditionCanceled(conditionId))
+            revert ConditionCanceled_(conditionId);
+        if (condition.state != ConditionState.CREATED)
+            revert ConditionAlreadyResolved(conditionId);
+        if (block.timestamp < condition.timestamp)
+            revert ConditionNotStarted(conditionId);
 
-            emit ConditionCanceled(conditionId);
+        _outcomeIsCorrect(condition, outcomeWon);
 
-            return true;
-        }
-        return false;
+        DAOReward +=
+            ((condition.totalNetBets[0] + condition.totalNetBets[1]) * daoFee) /
+            multiplier;
+
+        condition.outcomeWon = outcomeWon;
+        condition.state = ConditionState.RESOLVED;
+
+        emit ConditionResolved(conditionId, outcomeWon);
     }
 
     /**
@@ -223,55 +147,6 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
     }
 
     /**
-     * @notice Bet `amount` tokens that in the condition `conditionId` will happen outcome with id `outcome`.
-     * @dev    Minted tokenId = 2 * `conditionId` + index of outcome `outcome` in condition struct.
-     * @param  conditionId the match or game id
-     * @param  outcome id of predicted outcome
-     * @param  amount bet amount in tokens
-     */
-    function _bet(
-        uint256 conditionId,
-        uint64 outcome,
-        uint128 amount
-    ) internal {
-        if (amount == 0) revert AmountMustNotBeZero();
-
-        Condition storage condition = _getCondition(conditionId);
-
-        if (conditionIsCanceled(conditionId))
-            revert ConditionCanceled_(conditionId);
-        if (block.timestamp >= condition.timestamp)
-            revert ConditionStarted(conditionId);
-        outcomeIsCorrect(condition, outcome);
-
-        uint256 tokenId = conditionId *
-            2 -
-            (outcome == condition.outcomes[0] ? 1 : 0);
-        condition.totalNetBets[(tokenId + 1) % 2] += amount;
-        super._mint(msg.sender, tokenId, amount, "");
-
-        emit NewBet(msg.sender, tokenId, conditionId, outcome, amount);
-    }
-
-    /**
-     * @notice Get token id of bet on outcome `outcome` in condition `conditionId`.
-     * @param  conditionId the match or game id
-     * @param  outcome id of predicted outcome
-     * @return bet token id
-     */
-    function getTokenId(uint256 conditionId, uint64 outcome)
-        public
-        view
-        returns (uint256)
-    {
-        Condition memory condition = _getCondition(conditionId);
-
-        outcomeIsCorrect(condition, outcome);
-
-        return conditionId * 2 - (outcome == condition.outcomes[0] ? 1 : 0);
-    }
-
-    /**
      * @notice Withdraw payout based on bet with AzuroBet token `tokenId` in finished or cancelled condition.
      * @param  tokenIds array of bet tokens ids withdraw payout to
      */
@@ -279,7 +154,7 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
         TransferHelper.safeTransfer(
             token,
             msg.sender,
-            _withdrawPayout(tokenIds)
+            _resolvePayout(tokenIds)
         );
     }
 
@@ -288,19 +163,42 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
      * @param  tokenIds array of bet tokens ids withdraw payout to
      */
     function withdrawPayoutNative(uint256[] calldata tokenIds) external {
-        uint256 amount = _withdrawPayout(tokenIds);
+        uint128 amount = _resolvePayout(tokenIds);
         IWNative(token).withdraw(amount);
         TransferHelper.safeTransferETH(msg.sender, amount);
     }
 
     /**
-     * @notice Withdraw payout based on bets in finished or cancelled conditions.
-     * @param  tokenIds array of bet tokens ids withdraw payout to
+     * @notice Reward contract owner (DAO) with total amount of charged fees.
      */
-    function _withdrawPayout(uint256[] calldata tokenIds)
-        internal
-        returns (uint256 totalPayout)
+    function claimDAOReward() external {
+        if (DAOReward == 0) revert NoDAOReward();
+
+        uint128 reward = DAOReward;
+        DAOReward = 0;
+        TransferHelper.safeTransfer(token, owner(), reward);
+    }
+
+    /**
+     * @notice Get condition with id `conditionId`.
+     * @param  conditionId the match or game id
+     * @return the match or game struct
+     */
+    function getCondition(uint256 conditionId)
+        external
+        view
+        returns (Condition memory)
     {
+        return _getCondition(conditionId);
+    }
+
+    /**
+     * @notice View payout based on bets in finished or cancelled conditions.
+     * @param  tokenIds array of bet tokens ids view payout to
+     * @return payout unclaimed winnings of the owner of the token
+     */
+    function viewPayout(uint256[] calldata tokenIds) public returns (uint128) {
+        uint256 payout;
         uint256 refunds;
         uint256 conditionId;
         uint256 tokenId;
@@ -317,17 +215,15 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
 
             if (
                 condition.state != ConditionState.RESOLVED &&
-                !conditionIsCanceled(conditionId)
+                !_isConditionCanceled(conditionId)
             ) revert ConditionStillOn(conditionId);
-
-            super._burn(msg.sender, tokenId, balance);
 
             outcomeWinIndex = (tokenId + 1) % 2; // uint256 used to reduce gas consumption
             if (condition.state == ConditionState.RESOLVED) {
                 if (
                     condition.outcomes[outcomeWinIndex] == condition.outcomeWon
                 ) {
-                    totalPayout +=
+                    payout +=
                         ((condition.totalNetBets[0] +
                             condition.totalNetBets[1]) * balance) /
                         condition.totalNetBets[outcomeWinIndex];
@@ -336,20 +232,146 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
                 refunds += balance;
             }
         }
-        totalPayout =
-            (totalPayout * (multiplier - daoFee)) /
-            multiplier +
-            refunds;
+        payout = (payout * (multiplier - daoFee)) / multiplier + refunds;
+
+        return uint128(payout);
     }
 
     /**
-     * @notice Reward contract owner (DAO) with total amount of charged fees.
+     * @notice Get token id of bet on outcome `outcome` in condition `conditionId`.
+     * @param  conditionId the match or game id
+     * @param  outcome id of predicted outcome
+     * @return bet token id
      */
-    function claimDAOReward() external {
-        if (DAOReward == 0) revert NoDAOReward();
+    function getTokenId(uint256 conditionId, uint64 outcome)
+        public
+        view
+        returns (uint256)
+    {
+        Condition memory condition = _getCondition(conditionId);
 
-        uint128 reward = DAOReward;
-        DAOReward = 0;
-        TransferHelper.safeTransfer(token, owner(), reward);
+        _outcomeIsCorrect(condition, outcome);
+
+        return conditionId * 2 - (outcome == condition.outcomes[0] ? 1 : 0);
+    }
+
+    /**
+     * @notice Bet `amount` tokens that in the condition `conditionId` will happen outcome with id `outcome`.
+     * @dev    Minted tokenId = 2 * `conditionId` + index of outcome `outcome` in condition struct.
+     * @param  conditionId the match or game id
+     * @param  outcome id of predicted outcome
+     * @param  amount bet amount in tokens
+     */
+    function _bet(
+        uint256 conditionId,
+        uint64 outcome,
+        uint128 amount
+    ) internal {
+        if (amount == 0) revert AmountMustNotBeZero();
+
+        Condition storage condition = _getCondition(conditionId);
+
+        if (_isConditionCanceled(conditionId))
+            revert ConditionCanceled_(conditionId);
+        if (block.timestamp >= condition.timestamp)
+            revert ConditionStarted(conditionId);
+        _outcomeIsCorrect(condition, outcome);
+
+        uint256 tokenId = conditionId *
+            2 -
+            (outcome == condition.outcomes[0] ? 1 : 0);
+        condition.totalNetBets[(tokenId + 1) % 2] += amount;
+        super._mint(msg.sender, tokenId, amount, "");
+
+        emit NewBet(msg.sender, tokenId, conditionId, outcome, amount);
+    }
+
+    /**
+     * @notice Check if the condition `conditionId` is canceled.
+     * @dev    Previously cancel the condition if during `expireTime` sec before it starts there are no bets on one of the outcomes.
+     * @param  conditionId the match or game id
+     * @return true if the condition is canceled else false
+     */
+    function _isConditionCanceled(uint256 conditionId) internal returns (bool) {
+        Condition storage condition = _getCondition(conditionId);
+
+        if (condition.state == ConditionState.CANCELED) {
+            return true;
+        }
+        if (
+            (block.timestamp + expireTimer >= condition.timestamp) &&
+            (condition.totalNetBets[0] == 0 || condition.totalNetBets[1] == 0)
+        ) {
+            condition.state = ConditionState.CANCELED;
+
+            emit ConditionCanceled(conditionId);
+
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @notice Resolve payout based on bets in finished or cancelled conditions.
+     * @param  tokenIds array of bet tokens ids withdraw payout to
+     * @return payout winnings of the owner of the token
+     */
+    function _resolvePayout(uint256[] calldata tokenIds)
+        internal
+        returns (uint128 payout)
+    {
+        payout = viewPayout(tokenIds);
+        for (uint256 i = 0; i < tokenIds.length; ++i) {
+            _burnAll(msg.sender, tokenIds[i]);
+        }
+        emit BettorWon(msg.sender, tokenIds, payout);
+    }
+
+    /**
+     * @notice Burn all of tokens type `id` owned by address `from`.
+     * @notice See {IERC1155-_burn}.
+     * @param  from token recipient
+     * @param  tokenId token type ID
+     */
+    function _burnAll(address from, uint256 tokenId) internal {
+        super._burn(from, tokenId, super.balanceOf(from, tokenId));
+    }
+
+    /**
+     * @notice Get condition with id `conditionId`.
+     * @param  conditionId the match or game id
+     * @return the match or game struct
+     */
+    function _getCondition(uint256 conditionId)
+        internal
+        view
+        returns (Condition storage)
+    {
+        Condition storage condition = conditions[conditionId];
+        if (condition.timestamp == 0) revert ConditionNotExists(conditionId);
+
+        return condition;
+    }
+
+    /**
+     * @notice Throws if function was not called by oracle.
+     * @param  condition the match or game struct
+     */
+    function _onlyOracle(Condition memory condition) internal view {
+        if (condition.oracle != msg.sender) revert OnlyOracle();
+    }
+
+    /**
+     * @notice Throws if the condition `conditionId` have not outcome `outcome` as possible.
+     * @param  condition the match or game struct
+     * @param  outcome outcome id
+     */
+    function _outcomeIsCorrect(Condition memory condition, uint64 outcome)
+        internal
+        pure
+    {
+        if (
+            outcome != condition.outcomes[0] && outcome != condition.outcomes[1]
+        ) revert WrongOutcome();
     }
 }
