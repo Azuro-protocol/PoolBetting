@@ -79,7 +79,7 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
      * @param  outcomeWon id of happened outcome
      */
     function resolveCondition(uint256 conditionId, uint64 outcomeWon) external {
-        Condition storage condition = getCondition(conditionId);
+        Condition storage condition = _getCondition(conditionId);
         onlyOracle(condition);
 
         if (conditionIsCanceled(conditionId))
@@ -107,6 +107,19 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
      * @return the match or game struct
      */
     function getCondition(uint256 conditionId)
+        external
+        view
+        returns (Condition memory)
+    {
+        return _getCondition(conditionId);
+    }
+
+    /**
+     * @notice Get condition with id `conditionId`.
+     * @param  conditionId the match or game id
+     * @return the match or game struct
+     */
+    function _getCondition(uint256 conditionId)
         internal
         view
         returns (Condition storage)
@@ -144,7 +157,7 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
      * @param   conditionId the current match or game id
      */
     function cancelCondition(uint256 conditionId) external {
-        Condition storage condition = getCondition(conditionId);
+        Condition storage condition = _getCondition(conditionId);
         onlyOracle(condition);
 
         if (condition.state == ConditionState.RESOLVED)
@@ -164,7 +177,7 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
      * @return true if the condition is canceled else false
      */
     function conditionIsCanceled(uint256 conditionId) internal returns (bool) {
-        Condition storage condition = getCondition(conditionId);
+        Condition storage condition = _getCondition(conditionId);
 
         if (condition.state == ConditionState.CANCELED) {
             return true;
@@ -223,7 +236,7 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
     ) internal {
         if (amount == 0) revert AmountMustNotBeZero();
 
-        Condition storage condition = getCondition(conditionId);
+        Condition storage condition = _getCondition(conditionId);
 
         if (conditionIsCanceled(conditionId))
             revert ConditionCanceled_(conditionId);
@@ -251,7 +264,7 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
         view
         returns (uint256)
     {
-        Condition memory condition = getCondition(conditionId);
+        Condition memory condition = _getCondition(conditionId);
 
         outcomeIsCorrect(condition, outcome);
 
@@ -300,7 +313,7 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
             if (balance == 0) revert ZeroBalance(tokenId);
 
             conditionId = (tokenId + 1) / 2;
-            Condition memory condition = getCondition(conditionId);
+            Condition memory condition = _getCondition(conditionId);
 
             if (
                 condition.state != ConditionState.RESOLVED &&
