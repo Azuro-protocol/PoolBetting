@@ -40,14 +40,6 @@ async function main() {
     console.log("PoolBetting deployed to:", poolBettingImplAddress);
     console.log();
   }
-
-  // verification
-  if (chainId != 0x7a69) {
-    await hre.run("verify:verify", {
-      address: poolBettingImplAddress,
-      constructorArguments: [],
-    });
-  }
 }
 
 main()
