@@ -14,17 +14,17 @@ interface IPoolBetting {
         bytes32 ipfsHash;
         uint128[2] totalNetBets;
         uint64[2] outcomes;
-        uint64 outcomeWon;
-        uint64 timestamp;
+        uint64 outcomeWin;
+        uint64 startsAt;
         ConditionState state;
     }
 
-    event BettorWon(address indexed bettor, uint256[] tokenId, uint128 amount);
+    event BettorWin(address indexed bettor, uint256[] tokenId, uint128 amount);
 
     event ConditionCreated(
         address indexed oracle,
         uint256 indexed conditionId,
-        uint64 timestamp
+        uint64 startsAt
     );
     event ConditionResolved(uint256 indexed conditionId, uint64 outcomeWin);
     event ConditionCanceled(uint256 indexed conditionId);
