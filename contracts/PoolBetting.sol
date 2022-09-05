@@ -25,13 +25,9 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
     uint128 public DAOReward;
 
     receive() external payable {
-        assert(msg.sender == token); // only accept native tokens via fallback from the WETH contract
+        assert(msg.sender == token);
     }
 
-    /**
-     * @param  token_ address of the token used in bets and rewards
-     * @param  fee bet fee in decimals 10^9
-     */
     function initialize(address token_, uint128 fee)
         external
         virtual
