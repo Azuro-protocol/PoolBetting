@@ -50,8 +50,8 @@ npm run node
 ## Gnosis main network
 ### Contracts
 ```
-PoolBetting  0x8E1823B5EA85bd1cD45936c8a4abA9391F6EAb5f
-Impl         0xC65B0dF5bA13Dc00a06aE672261909aECae41644
+PoolBetting  0x3cEf18C197a77Be448fABbdD1baf00e5CDaDb149
+Impl         0x7003CaA0847CA296EBF51C43D9021656a663304f
 ```
 
 ## Rinkeby test network
