@@ -20,10 +20,8 @@ const prepareStand = async (ethers, owner, fee) => {
   return [poolBetting, wxDAI];
 };
 
-const createCondition = async (poolBetting, oracle, outcomes, timestamp, ipfsHash) => {
-  const txCreate = await poolBetting
-    .connect(oracle)
-    .createCondition(outcomes, timestamp, ethers.utils.formatBytes32String(ipfsHash));
+const createCondition = async (poolBetting, oracle, timestamp, ipfsHash) => {
+  const txCreate = await poolBetting.connect(oracle).createCondition(timestamp, ipfsHash);
   const conditionId = await getConditionId_Hash(txCreate);
 
   return conditionId;
