@@ -225,7 +225,7 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
 
     /**
      * @notice Bet `amount` tokens that in the condition `conditionId` will happen outcome with id `outcome`.
-     * @dev    Minted tokenId = 2 * `conditionId` + index of outcome `outcome` in condition struct.
+     * @dev    Minted tokenId equals concatenation of `conditionId` and `outcome`.
      * @param  conditionId the match or game id
      * @param  outcome id of predicted outcome
      * @param  amount bet amount in tokens
