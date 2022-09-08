@@ -45,21 +45,33 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
 
     /**
      * @notice Provide information about current condition.
-     * @param  startsAt time when match starts and bets not allowed
      * @param  ipfsHash detailed info about match stored in IPFS
+     * @param  bettingStartsAt time after betting in allowed
+     * @param  bettingEndsAt time after betting in not allowed
      */
-    function createCondition(uint64 startsAt, bytes32 ipfsHash) external {
-        if (startsAt <= block.timestamp + expireTimer)
+    function createCondition(
+        bytes32 ipfsHash,
+        uint64 bettingStartsAt,
+        uint64 bettingEndsAt
+    ) external {
+        if (bettingStartsAt >= bettingEndsAt) revert IncorrectBettingPeriod();
+        if (bettingEndsAt <= block.timestamp + expireTimer)
             revert ConditionExpired();
 
         uint256 conditionId = ++lastConditionId;
 
         Condition storage newCondition = conditions[conditionId];
         newCondition.oracle = msg.sender;
-        newCondition.startsAt = startsAt;
+        newCondition.bettingStartsAt = bettingStartsAt;
+        newCondition.bettingEndsAt = bettingEndsAt;
         newCondition.ipfsHash = ipfsHash;
 
-        emit ConditionCreated(msg.sender, conditionId, startsAt);
+        emit ConditionCreated(
+            msg.sender,
+            conditionId,
+            bettingStartsAt,
+            bettingEndsAt
+        );
     }
 
     /**
@@ -93,7 +105,7 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
             revert ConditionCanceled_(conditionId);
         if (condition.state != ConditionState.CREATED)
             revert ConditionAlreadyResolved(conditionId);
-        if (block.timestamp < condition.startsAt)
+        if (block.timestamp < condition.bettingEndsAt)
             revert ConditionNotStarted(conditionId);
 
         _outcomeIsCorrect(outcomeWin);
@@ -241,8 +253,11 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
 
         if (_isConditionCanceled(conditionId))
             revert ConditionCanceled_(conditionId);
-        if (block.timestamp >= condition.startsAt)
-            revert ConditionStarted(conditionId);
+
+        uint64 bettingStartsAt = condition.bettingStartsAt;
+        if (block.timestamp < bettingStartsAt)
+            revert BettingNotStarted(bettingStartsAt);
+        if (block.timestamp >= condition.bettingEndsAt) revert BettingEnded();
 
         uint256 tokenId = getTokenId(conditionId, outcome);
         condition.totalNetBets[outcome - 1] += amount;
@@ -289,7 +304,7 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
             return true;
         }
         if (
-            (block.timestamp + expireTimer >= condition.startsAt) &&
+            (block.timestamp + expireTimer >= condition.bettingEndsAt) &&
             (condition.totalNetBets[0] == 0 || condition.totalNetBets[1] == 0)
         ) {
             condition.state = ConditionState.CANCELED;
@@ -328,7 +343,8 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
         returns (Condition storage)
     {
         Condition storage condition = conditions[conditionId];
-        if (condition.startsAt == 0) revert ConditionNotExists(conditionId);
+        if (condition.bettingEndsAt == 0)
+            revert ConditionNotExists(conditionId);
 
         return condition;
     }

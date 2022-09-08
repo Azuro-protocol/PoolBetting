@@ -2,19 +2,19 @@
   "manifestVersion": "3.2",
   "admin": {
     "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    "txHash": "0x91025eb9bc92eed692e95572eb12a433a3a2de92c785754fbfb445ec4cc7eeab"
+    "txHash": "0x9cee44cf178ffb18cea8e1dc9590b738409886c03ab0c7d402991079a5b8276e"
   },
   "proxies": [
     {
       "address": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-      "txHash": "0xd5272d62431bf29102f7c10899461d1881df95e1abb610ab63535d86d1ebfcd0",
+      "txHash": "0x55062fd293aa8dda24576118980db74e797ac88075de42a1ec50a5f77fc22276",
       "kind": "transparent"
     }
   ],
   "impls": {
-    "7196c8c58b11c2ad902c703bc6ad9c1ca4b71ec8818ab95d226ba94e304e1119": {
+    "fd91a33cdbc79ce47ad26a5f6436acf4dd313176e30b969742853805c518ed94": {
       "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-      "txHash": "0x8d6d04277a2d8f8e8fc37713266a1cbaa0eb7e6a661888ab98a627fbea584269",
+      "txHash": "0x6fda1cb011f8ec6983ea2a1632c38f11aa538ddc34e0487ac161a11168288b21",
       "layout": {
         "storage": [
           {
@@ -99,68 +99,52 @@
             "src": "@openzeppelin\\contracts-upgradeable\\token\\ERC1155\\ERC1155Upgradeable.sol:522"
           },
           {
-            "label": "token",
+            "label": "lastConditionId",
             "offset": 0,
             "slot": "201",
-            "type": "t_address",
-            "contract": "PoolBetting",
-            "src": "contracts\\PoolBetting.sol:13"
-          },
-          {
-            "label": "daoFee",
-            "offset": 0,
-            "slot": "202",
-            "type": "t_uint128",
+            "type": "t_uint256",
             "contract": "PoolBetting",
             "src": "contracts\\PoolBetting.sol:15"
           },
           {
-            "label": "DAOReward",
-            "offset": 16,
+            "label": "conditions",
+            "offset": 0,
             "slot": "202",
-            "type": "t_uint128",
+            "type": "t_mapping(t_uint256,t_struct(Condition)3125_storage)",
             "contract": "PoolBetting",
             "src": "contracts\\PoolBetting.sol:16"
           },
           {
-            "label": "expireTimer",
+            "label": "token",
             "offset": 0,
+            "slot": "203",
+            "type": "t_address",
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:18"
+          },
+          {
+            "label": "expireTimer",
+            "offset": 20,
             "slot": "203",
             "type": "t_uint64",
             "contract": "PoolBetting",
-            "src": "contracts\\PoolBetting.sol:21"
+            "src": "contracts\\PoolBetting.sol:22"
           },
           {
-            "label": "oracles",
+            "label": "daoFee",
             "offset": 0,
             "slot": "204",
-            "type": "t_mapping(t_address,t_bool)",
+            "type": "t_uint128",
+            "contract": "PoolBetting",
+            "src": "contracts\\PoolBetting.sol:24"
+          },
+          {
+            "label": "daoReward",
+            "offset": 16,
+            "slot": "204",
+            "type": "t_uint128",
             "contract": "PoolBetting",
             "src": "contracts\\PoolBetting.sol:25"
-          },
-          {
-            "label": "oracleCondIds",
-            "offset": 0,
-            "slot": "205",
-            "type": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))",
-            "contract": "PoolBetting",
-            "src": "contracts\\PoolBetting.sol:26"
-          },
-          {
-            "label": "conditions",
-            "offset": 0,
-            "slot": "206",
-            "type": "t_mapping(t_uint256,t_struct(Condition)3184_storage)",
-            "contract": "PoolBetting",
-            "src": "contracts\\PoolBetting.sol:28"
-          },
-          {
-            "label": "lastConditionId",
-            "offset": 0,
-            "slot": "207",
-            "type": "t_uint256",
-            "contract": "PoolBetting",
-            "src": "contracts\\PoolBetting.sol:29"
           }
         ],
         "types": {
@@ -184,10 +168,6 @@
             "label": "uint256[50]",
             "numberOfBytes": "1600"
           },
-          "t_array(t_uint64)2_storage": {
-            "label": "uint64[2]",
-            "numberOfBytes": "32"
-          },
           "t_bool": {
             "label": "bool",
             "numberOfBytes": "1"
@@ -196,7 +176,7 @@
             "label": "bytes32",
             "numberOfBytes": "32"
           },
-          "t_enum(ConditionState)3166": {
+          "t_enum(ConditionState)3107": {
             "label": "enum IPoolBetting.ConditionState",
             "members": [
               "CREATED",
@@ -213,10 +193,6 @@
             "label": "mapping(address => mapping(address => bool))",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_address,t_mapping(t_uint256,t_uint256))": {
-            "label": "mapping(address => mapping(uint256 => uint256))",
-            "numberOfBytes": "32"
-          },
           "t_mapping(t_address,t_uint256)": {
             "label": "mapping(address => uint256)",
             "numberOfBytes": "32"
@@ -225,55 +201,57 @@
             "label": "mapping(uint256 => mapping(address => uint256))",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_uint256,t_struct(Condition)3184_storage)": {
+          "t_mapping(t_uint256,t_struct(Condition)3125_storage)": {
             "label": "mapping(uint256 => struct IPoolBetting.Condition)",
-            "numberOfBytes": "32"
-          },
-          "t_mapping(t_uint256,t_uint256)": {
-            "label": "mapping(uint256 => uint256)",
             "numberOfBytes": "32"
           },
           "t_string_storage": {
             "label": "string",
             "numberOfBytes": "32"
           },
-          "t_struct(Condition)3184_storage": {
+          "t_struct(Condition)3125_storage": {
             "label": "struct IPoolBetting.Condition",
             "members": [
+              {
+                "label": "oracle",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
               {
                 "label": "ipfsHash",
                 "type": "t_bytes32",
                 "offset": 0,
-                "slot": "0"
+                "slot": "1"
               },
               {
                 "label": "totalNetBets",
                 "type": "t_array(t_uint128)2_storage",
                 "offset": 0,
-                "slot": "1"
-              },
-              {
-                "label": "outcomes",
-                "type": "t_array(t_uint64)2_storage",
-                "offset": 0,
                 "slot": "2"
               },
               {
-                "label": "outcomeWon",
+                "label": "bettingStartsAt",
                 "type": "t_uint64",
                 "offset": 0,
                 "slot": "3"
               },
               {
-                "label": "timestamp",
+                "label": "bettingEndsAt",
                 "type": "t_uint64",
                 "offset": 8,
                 "slot": "3"
               },
               {
-                "label": "state",
-                "type": "t_enum(ConditionState)3166",
+                "label": "outcomeWin",
+                "type": "t_uint8",
                 "offset": 16,
+                "slot": "3"
+              },
+              {
+                "label": "state",
+                "type": "t_enum(ConditionState)3107",
+                "offset": 17,
                 "slot": "3"
               }
             ],
