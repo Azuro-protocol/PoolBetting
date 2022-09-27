@@ -2,19 +2,19 @@
   "manifestVersion": "3.2",
   "admin": {
     "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    "txHash": "0x9cee44cf178ffb18cea8e1dc9590b738409886c03ab0c7d402991079a5b8276e"
+    "txHash": "0x1ccd166fba46dc265b7767f473ff15e45ad770ea8c3acd5c02e9dc9db51dfe19"
   },
   "proxies": [
     {
       "address": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-      "txHash": "0x55062fd293aa8dda24576118980db74e797ac88075de42a1ec50a5f77fc22276",
+      "txHash": "0xbefdfc1cc68fc2e3d96f800f31cc2b3e43d430141f71c295224dd2e3ebf0c514",
       "kind": "transparent"
     }
   ],
   "impls": {
-    "fd91a33cdbc79ce47ad26a5f6436acf4dd313176e30b969742853805c518ed94": {
+    "cd3ef4cb5fd12949d5fad9e101f8b0fcce2da259727c2e29254918d251390509": {
       "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-      "txHash": "0x6fda1cb011f8ec6983ea2a1632c38f11aa538ddc34e0487ac161a11168288b21",
+      "txHash": "0x27f68389537890fefc6340a749d7ebc2928d926ee3f76d50ce0b54b7f89f8502",
       "layout": {
         "storage": [
           {
@@ -110,7 +110,7 @@
             "label": "conditions",
             "offset": 0,
             "slot": "202",
-            "type": "t_mapping(t_uint256,t_struct(Condition)3125_storage)",
+            "type": "t_mapping(t_uint256,t_struct(Condition)3191_storage)",
             "contract": "PoolBetting",
             "src": "contracts\\PoolBetting.sol:16"
           },
@@ -176,7 +176,7 @@
             "label": "bytes32",
             "numberOfBytes": "32"
           },
-          "t_enum(ConditionState)3107": {
+          "t_enum(ConditionState)3173": {
             "label": "enum IPoolBetting.ConditionState",
             "members": [
               "CREATED",
@@ -201,7 +201,7 @@
             "label": "mapping(uint256 => mapping(address => uint256))",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_uint256,t_struct(Condition)3125_storage)": {
+          "t_mapping(t_uint256,t_struct(Condition)3191_storage)": {
             "label": "mapping(uint256 => struct IPoolBetting.Condition)",
             "numberOfBytes": "32"
           },
@@ -209,7 +209,7 @@
             "label": "string",
             "numberOfBytes": "32"
           },
-          "t_struct(Condition)3125_storage": {
+          "t_struct(Condition)3191_storage": {
             "label": "struct IPoolBetting.Condition",
             "members": [
               {
@@ -231,13 +231,13 @@
                 "slot": "2"
               },
               {
-                "label": "bettingStartsAt",
+                "label": "startsAt",
                 "type": "t_uint64",
                 "offset": 0,
                 "slot": "3"
               },
               {
-                "label": "bettingEndsAt",
+                "label": "bettingStartsAt",
                 "type": "t_uint64",
                 "offset": 8,
                 "slot": "3"
@@ -250,7 +250,7 @@
               },
               {
                 "label": "state",
-                "type": "t_enum(ConditionState)3107",
+                "type": "t_enum(ConditionState)3173",
                 "offset": 17,
                 "slot": "3"
               }
