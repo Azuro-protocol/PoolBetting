@@ -131,10 +131,8 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
 
         _onlyOracle(condition);
         if (_isConditionCanceled(conditionId)) revert ConditionCanceled_();
-        if (startsAt <= block.timestamp + expireTimer)
-            revert ConditionExpired(
-                startsAt > expireTimer ? startsAt - expireTimer : 0
-            );
+        if (startsAt < condition.bettingStartsAt)
+            revert IncorrectBettingPeriod();
 
         condition.startsAt = startsAt;
         emit ConditionShifted(conditionId, startsAt);
@@ -273,11 +271,15 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
 
         if (_isConditionCanceled(conditionId)) revert ConditionCanceled_();
 
+        if (_isConditionCanceled(conditionId)) revert ConditionCanceled_();
+        if (condition.state != ConditionState.CREATED)
+            revert ConditionResolved_();
+
+        uint64 startsAt = condition.startsAt;
+        if (block.timestamp >= startsAt) revert BettingEnded(startsAt);
         uint64 bettingStartsAt = condition.bettingStartsAt;
         if (block.timestamp < bettingStartsAt)
             revert BettingNotStarted(bettingStartsAt);
-        uint64 startsAt = condition.startsAt;
-        if (block.timestamp >= startsAt) revert BettingEnded(startsAt);
 
         uint256 tokenId = getTokenId(conditionId, outcome);
         condition.totalNetBets[outcome - 1] += amount;

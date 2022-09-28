@@ -472,13 +472,14 @@ describe("PoolBetting test", function () {
         );
       });
       it("Should NOT shift condition start to incorrect timestamp", async () => {
-        let conditionId = await createCondition(poolBetting, oracle, IPFS, time + ONE_HOUR, time);
+        const bettingStartsAt = time;
+        let conditionId = await createCondition(poolBetting, oracle, IPFS, time + ONE_HOUR, bettingStartsAt);
 
         await poolBetting.connect(oracle).shiftCondition(conditionId, time + 2 * ONE_HOUR);
 
-        await expect(
-          poolBetting.connect(oracle).shiftCondition(conditionId, time + EXPIRE_TIMER - 1)
-        ).to.be.revertedWith(`ConditionExpired(${time - 1})`);
+        await expect(poolBetting.connect(oracle).shiftCondition(conditionId, bettingStartsAt - 1)).to.be.revertedWith(
+          `IncorrectBettingPeriod()`
+        );
       });
       it("Should NOT shift canceled condition", async () => {
         let conditionId = await createCondition(poolBetting, oracle, IPFS, time + ONE_HOUR, time);
@@ -518,6 +519,18 @@ describe("PoolBetting test", function () {
         timeShift(time + ONE_HOUR - 1);
         await expect(makeBet(poolBetting, bettor, conditionId, OUTCOMELOSE, BET)).to.be.revertedWith(
           `ConditionCanceled_()`
+        );
+      });
+      it("Should NOT bet on resolved condition", async () => {
+        await makeBet(poolBetting, bettor, conditionId, OUTCOMEWIN, BET);
+        await makeBet(poolBetting, bettor, conditionId, OUTCOMELOSE, BET);
+
+        timeShift(time + ONE_HOUR);
+        await poolBetting.connect(oracle).resolveCondition(conditionId, OUTCOMEWIN);
+        poolBetting.connect(oracle).shiftCondition(conditionId, time + 24 * ONE_HOUR);
+
+        await expect(makeBet(poolBetting, bettor, conditionId, OUTCOMEWIN, BET)).to.be.revertedWith(
+          `ConditionResolved_()`
         );
       });
       it("Should NOT bet on canceled condition", async () => {
