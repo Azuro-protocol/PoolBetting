@@ -55,10 +55,10 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
         uint64 bettingStartsAt
     ) external {
         if (bettingStartsAt >= startsAt) revert IncorrectBettingPeriod();
-        if (startsAt <= block.timestamp + expireTimer)
-            revert ConditionExpired(
-                startsAt > expireTimer ? startsAt - expireTimer : 0
-            );
+        if (
+            startsAt <= block.timestamp + expireTimer ||
+            startsAt <= bettingStartsAt + expireTimer
+        ) revert ConditionExpired();
 
         uint256 conditionId = ++lastConditionId;
 
@@ -103,9 +103,10 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
         Condition storage condition = _getCondition(conditionId);
         _onlyOracle(condition);
 
-        if (_isConditionCanceled(conditionId)) revert ConditionCanceled_();
-        if (condition.state != ConditionState.CREATED)
+        _conditionNotCanceled(condition);
+        if (condition.state == ConditionState.RESOLVED)
             revert ConditionAlreadyResolved();
+
         uint64 startsAt = condition.startsAt;
         if (block.timestamp < startsAt) revert ConditionNotStarted(startsAt);
 
@@ -127,16 +128,30 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
      * @param  conditionId the match or game id
      * @param  startsAt new condition start time
      */
-    function shiftCondition(uint256 conditionId, uint64 startsAt) external {
+    function shiftCondition(
+        uint256 conditionId,
+        uint64 startsAt,
+        uint64 bettingStartsAt
+    ) external {
         Condition storage condition = _getCondition(conditionId);
-
         _onlyOracle(condition);
-        if (_isConditionCanceled(conditionId)) revert ConditionCanceled_();
-        if (startsAt < condition.bettingStartsAt)
-            revert IncorrectBettingPeriod();
+
+        if (condition.state == ConditionState.RESOLVED)
+            revert ConditionResolved_();
+        if (condition.state == ConditionState.CANCELED)
+            revert ConditionCanceled_();
+        if (bettingStartsAt >= startsAt) revert IncorrectBettingPeriod();
+        if (
+            (condition.totalNetBets[0] == 0 ||
+                condition.totalNetBets[1] == 0) &&
+            (startsAt <= block.timestamp + expireTimer ||
+                startsAt <= bettingStartsAt + expireTimer)
+        ) revert ConditionExpiredAfterShift();
 
         condition.startsAt = startsAt;
-        emit ConditionShifted(conditionId, startsAt);
+        condition.bettingStartsAt = bettingStartsAt;
+
+        emit ConditionShifted(conditionId, startsAt, bettingStartsAt);
     }
 
     /**
@@ -218,24 +233,25 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
             if (balance == 0) revert ZeroBalance(tokenId);
 
             conditionId = tokenId / 10;
-            Condition memory condition = _getCondition(conditionId);
+            Condition storage condition = _getCondition(conditionId);
 
-            if (
-                condition.state != ConditionState.RESOLVED &&
-                !_isConditionCanceled(conditionId)
-            ) revert ConditionStillOn();
+            if (condition.state == ConditionState.CREATED) {
+                if (!_isConditionExpired(condition))
+                    revert ConditionStillOn(conditionId);
 
-            outcome = tokenId % 10;
-            if (condition.state == ConditionState.RESOLVED) {
-                if (outcome == condition.outcomeWin) {
-                    payout +=
-                        ((condition.totalNetBets[0] +
-                            condition.totalNetBets[1]) * balance) /
-                        condition.totalNetBets[outcome - 1];
-                }
-            } else {
-                refunds += balance;
+                condition.state = ConditionState.CANCELED;
+                emit ConditionCanceled(conditionId);
             }
+            if (condition.state == ConditionState.CANCELED) {
+                refunds += balance;
+                continue;
+            }
+            outcome = tokenId % 10;
+            if (outcome == condition.outcomeWin)
+                payout +=
+                    ((condition.totalNetBets[0] + condition.totalNetBets[1]) *
+                        balance) /
+                    condition.totalNetBets[outcome - 1];
         }
 
         return uint128((payout * (MULTIPLIER - daoFee)) / MULTIPLIER + refunds);
@@ -269,10 +285,8 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
         Condition storage condition = _getCondition(conditionId);
         if (amount == 0) revert AmountMustNotBeZero();
 
-        if (_isConditionCanceled(conditionId)) revert ConditionCanceled_();
-
-        if (_isConditionCanceled(conditionId)) revert ConditionCanceled_();
-        if (condition.state != ConditionState.CREATED)
+        _conditionNotCanceled(condition);
+        if (condition.state == ConditionState.RESOLVED)
             revert ConditionResolved_();
 
         uint64 startsAt = condition.startsAt;
@@ -315,31 +329,6 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
     }
 
     /**
-     * @notice Check if the condition `conditionId` is canceled.
-     * @dev    Previously cancel the condition if during `expireTime` sec before it starts there are no bets on one of the outcomes.
-     * @param  conditionId the match or game id
-     * @return true if the condition is canceled else false
-     */
-    function _isConditionCanceled(uint256 conditionId) internal returns (bool) {
-        Condition storage condition = _getCondition(conditionId);
-
-        if (condition.state == ConditionState.CANCELED) {
-            return true;
-        }
-        if (
-            (block.timestamp + expireTimer >= condition.startsAt) &&
-            (condition.totalNetBets[0] == 0 || condition.totalNetBets[1] == 0)
-        ) {
-            condition.state = ConditionState.CANCELED;
-
-            emit ConditionCanceled(conditionId);
-
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * @notice Resolve payout based on bets in finished or cancelled conditions.
      * @param  tokenIds array of bet tokens ids withdraw payout to
      * @return payout winnings of the owner of the token
@@ -356,6 +345,16 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
     }
 
     /**
+     * @notice Throw if condition is canceled (expired).
+     */
+    function _conditionNotCanceled(Condition storage condition) internal view {
+        if (
+            condition.state == ConditionState.CANCELED ||
+            _isConditionExpired(condition)
+        ) revert ConditionCanceled_();
+    }
+
+    /**
      * @notice Get condition with id `conditionId`.
      * @param  conditionId the match or game id
      * @return the match or game struct
@@ -369,6 +368,20 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
         if (condition.oracle == address(0)) revert ConditionNotExists();
 
         return condition;
+    }
+
+    /**
+     * @notice Check if the condition is expired.
+     * @notice Condition is expired if if during `expireTime` sec before it starts there are no bets for one of its outcomes.
+     */
+    function _isConditionExpired(Condition storage condition)
+        internal
+        view
+        returns (bool)
+    {
+        return
+            (block.timestamp + expireTimer >= condition.startsAt) &&
+            (condition.totalNetBets[0] == 0 || condition.totalNetBets[1] == 0);
     }
 
     /**

@@ -29,7 +29,11 @@ interface IPoolBetting {
     );
     event ConditionCanceled(uint256 indexed conditionId);
     event ConditionResolved(uint256 indexed conditionId, uint64 outcomeWin);
-    event ConditionShifted(uint256 indexed conditionId, uint64 startsAt);
+    event ConditionShifted(
+        uint256 indexed conditionId,
+        uint64 startsAt,
+        uint64 bettingStartsAt
+    );
 
     event NewBet(
         address indexed owner,
@@ -45,10 +49,11 @@ interface IPoolBetting {
     error WrongToken();
     error WrongOutcome();
 
-    error ConditionExpired(uint64 expiredAt);
+    error ConditionExpired();
+    error ConditionExpiredAfterShift();
     error ConditionNotExists();
     error ConditionNotStarted(uint64 startsAt);
-    error ConditionStillOn();
+    error ConditionStillOn(uint256 conditionId);
     error ConditionStarted();
     error ConditionResolved_();
     error ConditionAlreadyResolved();
