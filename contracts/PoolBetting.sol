@@ -10,7 +10,7 @@ import "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
 /// @title Azuro Totalizator
 contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
-    uint48 constant multiplier = 10**12;
+    uint48 constant MULTIPLIER = 10**12;
 
     uint256 public lastConditionId;
     mapping(uint256 => Condition) public conditions;
@@ -21,20 +21,20 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
      */
     uint64 public expireTimer;
 
-    uint128 public daoFee;
+    uint64 public daoFee;
     uint128 public daoReward;
 
     receive() external payable {
         assert(msg.sender == token);
     }
 
-    function initialize(address token_, uint128 fee)
+    function initialize(address token_, uint64 fee)
         external
         virtual
         initializer
     {
         if (token_ == address(0)) revert WrongToken();
-        if (fee >= multiplier) revert WrongFee();
+        if (fee >= MULTIPLIER) revert WrongFee();
 
         __Ownable_init();
         __ERC1155_init("Pool Betting");
@@ -111,9 +111,10 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
 
         _outcomeIsCorrect(outcomeWin);
 
-        daoReward +=
-            ((condition.totalNetBets[0] + condition.totalNetBets[1]) * daoFee) /
-            multiplier;
+        daoReward += uint128(
+            (uint256(condition.totalNetBets[0] + condition.totalNetBets[1]) *
+                daoFee) / MULTIPLIER
+        );
 
         condition.outcomeWin = outcomeWin;
         condition.state = ConditionState.RESOLVED;
@@ -237,7 +238,7 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
             }
         }
 
-        return uint128((payout * (multiplier - daoFee)) / multiplier + refunds);
+        return uint128((payout * (MULTIPLIER - daoFee)) / MULTIPLIER + refunds);
     }
 
     /**
@@ -265,9 +266,8 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
         uint8 outcome,
         uint128 amount
     ) internal {
-        if (amount == 0) revert AmountMustNotBeZero();
-
         Condition storage condition = _getCondition(conditionId);
+        if (amount == 0) revert AmountMustNotBeZero();
 
         if (_isConditionCanceled(conditionId)) revert ConditionCanceled_();
 
@@ -277,13 +277,14 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
 
         uint64 startsAt = condition.startsAt;
         if (block.timestamp >= startsAt) revert BettingEnded(startsAt);
+
         uint64 bettingStartsAt = condition.bettingStartsAt;
         if (block.timestamp < bettingStartsAt)
             revert BettingNotStarted(bettingStartsAt);
 
         uint256 tokenId = getTokenId(conditionId, outcome);
-        condition.totalNetBets[outcome - 1] += amount;
         super._mint(msg.sender, tokenId, amount, "");
+        condition.totalNetBets[outcome - 1] += amount;
 
         emit NewBet(msg.sender, tokenId, conditionId, outcome, amount);
     }
@@ -365,7 +366,7 @@ contract PoolBetting is OwnableUpgradeable, ERC1155Upgradeable, IPoolBetting {
         returns (Condition storage)
     {
         Condition storage condition = conditions[conditionId];
-        if (condition.startsAt == 0) revert ConditionNotExists();
+        if (condition.oracle == address(0)) revert ConditionNotExists();
 
         return condition;
     }
