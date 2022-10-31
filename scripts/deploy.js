@@ -11,7 +11,6 @@ async function main() {
   let tokenAddress, poolBetting;
 
   console.log("Deployer wallet: ", deployer.address);
-  console.log("Deployer balance:", (await deployer.getBalance()).toString());
   console.log();
 
   const chainId = await hre.network.provider.send("eth_chainId");

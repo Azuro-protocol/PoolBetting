@@ -13,7 +13,6 @@ async function main() {
   const TIME_OUT = chainId == 0x7a69 ? 800 : chainId == 0x2a ? 8000 : 20000;
 
   console.log("Deployer wallet: ", deployer.address);
-  console.log("Deployer balance:", (await deployer.getBalance()).toString());
   console.log();
 
   // PoolBetting

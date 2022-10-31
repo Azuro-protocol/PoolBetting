@@ -17,7 +17,6 @@ async function main() {
   let wxDAI, poolBetting, poolBettingImpl, testWallet;
 
   console.log("Deployer wallet: ", deployer.address);
-  console.log("Deployer balance:", (await deployer.getBalance()).toString());
   console.log();
 
   const chainId = await hre.network.provider.send("eth_chainId");
