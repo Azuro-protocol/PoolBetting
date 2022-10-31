@@ -11,7 +11,7 @@ require("dotenv").config();
 const ALCHEMY_API_KEY_RINKEBY = process.env.ALCHEMY_API_KEY_RINKEBY || "";
 const RINKEBY_PRIVATE_KEY = process.env.RINKEBY_PRIVATE_KEY || "";
 const MAINNET_PRIVATE_KEY = process.env.MAINNET_PRIVATE_KEY || "";
-const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "";
+const GNOSISSCAN_API_KEY = process.env.GNOSISSCAN_API_KEY || "";
 
 task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   const accounts = await hre.ethers.getSigners();
@@ -64,7 +64,19 @@ module.exports = {
   defaultNetwork: "hardhat",
   networks: exportNetworks,
   etherscan: {
-    apiKey: ETHERSCAN_API_KEY,
+    apiKey: {
+      gnosis: GNOSISSCAN_API_KEY,
+    },
+    customChains: [
+      {
+        network: "gnosis",
+        chainId: 100,
+        urls: {
+          apiURL: "https://api.gnosisscan.io/api",
+          browserURL: "https://gnosisscan.io/",
+        },
+      },
+    ],
   },
   contractSizer: {
     alphaSort: true,

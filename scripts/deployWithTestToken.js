@@ -64,7 +64,7 @@ async function main() {
   // verification
   if (chainId != 0x7a69) {
     await hre.run("verify:verify", {
-      address: poolBettingImpl,
+      address: poolBetting.address,
       constructorArguments: [],
     });
   }
