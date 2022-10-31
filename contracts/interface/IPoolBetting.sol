@@ -13,8 +13,8 @@ interface IPoolBetting {
         address oracle;
         bytes32 ipfsHash;
         uint128[2] totalNetBets;
-        uint64 startsAt;
         uint64 bettingStartsAt;
+        uint64 bettingEndsAt;
         uint8 outcomeWin;
         ConditionState state;
     }
@@ -24,15 +24,15 @@ interface IPoolBetting {
     event ConditionCreated(
         address indexed oracle,
         uint256 indexed conditionId,
-        uint64 startsAt,
-        uint64 bettingStartsAt
+        uint64 bettingStartsAt,
+        uint64 bettingEndsAt
     );
     event ConditionCanceled(uint256 indexed conditionId);
     event ConditionResolved(uint256 indexed conditionId, uint64 outcomeWin);
     event ConditionShifted(
         uint256 indexed conditionId,
-        uint64 startsAt,
-        uint64 bettingStartsAt
+        uint64 bettingStartsAt,
+        uint64 bettingEndsAt
     );
 
     event NewBet(
@@ -52,7 +52,7 @@ interface IPoolBetting {
     error ConditionExpired();
     error ConditionExpiredAfterShift();
     error ConditionNotExists();
-    error ConditionNotStarted(uint64 startsAt);
+    error ConditionNotStarted(uint64 bettingEndsAt);
     error ConditionStillOn(uint256 conditionId);
     error ConditionStarted();
     error ConditionResolved_();
@@ -61,9 +61,8 @@ interface IPoolBetting {
     error ConditionAlreadyCanceled();
 
     error AmountMustNotBeZero();
-    error BettingNotStarted(uint64 startsAt);
+    error BettingNotStarted(uint64 bettingEndsAt);
     error BettingEnded(uint64 endsAt);
-    error IncorrectBettingPeriod();
     error NoDaoReward();
     error ZeroBalance(uint256 tokenId);
 }
